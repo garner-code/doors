@@ -10,3 +10,9 @@ git init
 git remote add origin https://lydiabarnes01:<PAT>@github.com/lydiabarnes01/doors.git
 ```
 
+### Directories
+
+- fig = figures showing individual and group results
+- res = results, i.e. summary metrics extracted from raw data files stored elsewhere
+- src = source code used to extract metrics and produce figures
+
