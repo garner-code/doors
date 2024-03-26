@@ -2,7 +2,7 @@
 # this script runs the analysis for data from the 'doors' project.
 
 # TODO:
-# add option to analyse by switch/stay trial, or by partial/complete transfer
+# fix accuracy and RT calculations
 
 # if running for the first time:
 #install.packages("renv")
@@ -36,28 +36,35 @@ grp_data <- data.frame(
   cond = integer(),
   onset = numeric(),
   door = integer(),
+  switch = integer(),
   door_c = integer(),
   offset = numeric()
 )
 for(sub in subjects){
-  data <- get_data(project$data_path,exp,sub,ses)
-  grp_data <- rbind(grp_data,data[idx])
+  data <- get_data(data_path,exp,sub,ses)
+  grp_data <- rbind(grp_data,data[[idx]])
 }
 
 ###
 # extract results: accuracy and RT (time to trial end)
 
-res <- grp_data %>% group_by(sub,test,t,cond) %>% summarise(
+#   by trial
+res <- grp_data %>% group_by(sub,train,t,switch) %>% summarise(
   n_clicks = n_distinct(door),
   n_correct = sum(door_c),
   accuracy = n_correct/n_clicks,
   rt = max(offset)
-) 
-
-###
-# save results
-fnl <- file.path(project_path,'results',paste(version,'.csv',sep = "_"))
+) %>% select(!n_clicks:n_correct)
+fnl <- file.path(project_path,'res',paste(version,'_trl.csv',sep = ""))
 write_csv(res,fnl)
 
-  
+#   by subject
+res <- grp_data %>% group_by(sub,train,switch) %>% summarise(
+  n_clicks = n_distinct(door),
+  n_correct = sum(door_c),
+  accuracy = n_correct/n_clicks,
+  rt = max(offset)
+) %>% select(!n_clicks:n_correct)
+fnl <- file.path(project_path,'res',paste(version,'_avg.csv',sep = ""))
+write_csv(res,fnl) 
 

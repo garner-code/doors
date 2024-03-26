@@ -10,7 +10,7 @@ get_data <- function(path,exp,sub,ses){
     
     ###
     # extract the start and end of each trial
-    resps <- resps %>%       
+    resps <- resps %>%  
       mutate(door_c = case_when(door_p>0~1,door_p==0~0,.default=0)) %>% 
       mutate(change = c(0,diff(open_d))) %>% 
       mutate(change_d = c(0,diff(door))) %>%
@@ -19,15 +19,15 @@ get_data <- function(path,exp,sub,ses){
       mutate(off = c(off[2:length(off)],TRUE))
     offset <- resps %>% filter(off == TRUE) %>% select(onset) %>% rename(offset = onset)
     onset <- resps %>% filter(on == TRUE) %>% select(!(change:off)) 
-    if(length(offset$offset) > length(resps$onset)){
+    if(length(offset$offset) > length(onset$onset)){
       resps$on[1]=TRUE
       onset <- resps %>% filter(on == TRUE) %>% select(!(change:off)) 
     }
     resps <- bind_cols(onset,offset) %>% select(!door_p:y)
     
     # separate click and hover responses
-    clicks <- resps %>% filter(open_d == 1) %>% select(!open_d) 
-    hovers <- resps %>% filter(open_d == 9) %>% select(!open_d)
+    clicks <- resps %>% filter(open_d == 1) %>% select(!open_d) %>% mutate(switch = c(0,case_when(diff(cond) !=0 ~ 1,.default=0)))
+    hovers <- resps %>% filter(open_d == 9) %>% select(!open_d) %>% mutate(switch = c(0,case_when(diff(cond) !=0 ~ 1,.default=0)))
     
     return(list(clicks,hovers))
     
