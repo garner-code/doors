@@ -38,4 +38,4 @@ If there are no folders called 'fig' and 'res', that's because Git is ignoring t
 
 - Click anywhere in the script, and press CTRL+Shift+S or CMD+Shift+S to run!
 
-- To plot the results, open 'make_figs.R', update its settings as you did for run_analysis.R, and CTRL/CMD+A and CTRL/CMD+Enter to run.
+- To create a plot of the results, open 'make_figs.R', update its settings as you did for run_analysis.R, and run.

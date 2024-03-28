@@ -15,7 +15,6 @@ version <- "20240325"
 exp <- 'exp_ts' #experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
 ses <- 'ses-train' #session: 'ses-learn','ses-train','ses-test'
 mes <- 'clicks' #measure: 'clicks' or 'hovers'
-
 title_sz <- 20
 label_sz <- 20
 mk_sz <- 2
@@ -41,3 +40,6 @@ results %>%
         axis.text.x = element_text(size = label_sz),axis.text.y = element_text(size = label_sz),legend.text = element_text(size=label_sz),
         axis.title.x = element_text(size = label_sz),axis.title.y = element_text(size = label_sz),legend.title=element_text(size=label_sz))
 
+
+fnl <- file.path(project_path,'fig',paste(paste(version,exp,ses,mes,'avg',sep='_'),'.pdf',sep = ""))
+ggsave(fnl,plot = last_plot())
