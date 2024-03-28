@@ -12,26 +12,30 @@ git init
 git remote add origin https://lydiabarnes01:<PAT>@github.com/lydiabarnes01/doors.git
 ```
 
-### Directories
+### The project
+
+The project has these sub-directories:
 
 - fig = figures showing individual and group results
 - res = results, i.e. summary metrics extracted from raw data files stored elsewhere
 - src = source code used to extract metrics and produce figures
 
-### Setting up R
+If there are no folders called 'fig' and 'res', that's because Git is ignoring them. You will need to create your own locally.
 
-Download RStudio with the latest version of R. 
+### Running the code
 
-In R, 
+- Open 'doors.Rproj'. This will open R with project-specific settings. 
+- The first time you do this, you should be prompted to run `renv::restore()` to set up all the packages that the project needs. Enter 'y' to accept.
 
-```R
-install.packages("renv")
-renv::init(project = '/Users/lydiabarnes/Documents/academe/projects/doors',bare = TRUE)
-```
+- Open 'run_analysis.R'. This is the controlling script for 'get_data.R'. Together, they filter out excess information in our data files and sort them ready for analysis. 
+- Update the data path
 
-Replace the project path with the path to your local copy!
+<!--I've written an absolute path for the data, which makes it easy for me to run the script on data that are stored outside the project directory. The path is specific to my computer, so you'll need to update it before you run the script. You can use your own absolute path (e.g. '\\C:\me\data\doors', '/Users/me/data/doors'), OR, if the data are inside the project, use file.path(project_path,'data').-->
 
+- Select your settings
 
+<!--You can choose which experiment version (task switching or transfer) and which session (learning, training, or test) you want to view, as well as whether you care about clicks or mouse position ('hover'). The 'version' variable changes the output file names to separate results from piloting and subsequent experiments. You could also use e.g. 'piloting', 'study01', 'study02' etc. to distinguish sequential experiments, or name each experiment by the date on which it starts. The important thing is having a new identifier every time the task code changes (e.g. if you do a second round of experiments and we change the stimulus durations), so that we are always analysing data that belong together.-->
 
+- Click anywhere in the script, and press CTRL+Shift+S or CMD+Shift+S to run!
 
-
+- To plot the results, open 'make_figs.R', update its settings as you did for run_analysis.R, and CTRL/CMD+A and CTRL/CMD+Enter to run.

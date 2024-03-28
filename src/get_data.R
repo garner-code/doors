@@ -25,7 +25,7 @@ get_data <- function(path,exp,sub,ses){
     }
     resps <- bind_cols(onset,offset) %>% select(!door_p:y)
     
-    # rename 'train' and 'test' to 'group' so treatment is consistent across sessions
+    # rename 'train' and 'test' to 'group' so treatment label is consistent across sessions
     if(ses == 'ses-train'){
       resps <- resps %>% rename(group = train)
     }else{

@@ -1,8 +1,4 @@
 .DS_Store
-.Rproj.user
-.Rhistory
-.Rprofile
-doors.Rproj
-renv
-renv.lock
+fig
 res
+.Rproj.user
