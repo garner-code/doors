@@ -1,49 +1,74 @@
-get_data <- function(path,exp,sub,ses,train_type){
+get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
   # reads in trial info and sample data from 'trls' and 'beh' files and formats into a one-row-per-trial data frame
 
-  trials_here <- file.exists(file.path(path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_trls.tsv',sep='_')))
-  resps_here <- file.exists(file.path(path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_beh.tsv',sep='_')))
+  trials_here <- file.exists(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_trls.tsv',sep='_')))
+  resps_here <- file.exists(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_beh.tsv',sep='_')))
 
   if(trials_here & resps_here){
-    trials <- read.table(file.path(path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_trls.tsv',sep='_')),header = TRUE)
-    resps <- read.table(file.path(path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_beh.tsv',sep='_')),header = TRUE)
+    trials <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_trls.tsv',sep='_')),header = TRUE)
+    resps <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_beh.tsv',sep='_')),header = TRUE)
+
+    ###
+    # trim the data
+    if (ses == 'ses-learn'){ # remove practice trials and reset trial numbers
+      trials <- trials %>% filter (t != 999)
+      resps <- resps %>% filter (cond != 3)
+      resps$t <- resps$t-5      
+    }
+    resps <- resps %>% filter(door>0) #we only care about samples in which people hovered or clicked on a door
+    resps <- resps %>% #clarify some variables
+      rename(context = cond) %>% 
+      mutate(door_correct = case_when(door_p>0~1,door_p==0~0,.default=0)) 
+    if(ses == 'ses-learn'){
+      resps <- resps %>% rename(ses = learn)
+    }else if(ses == 'ses-train'){
+        resps <- resps %>% rename(ses = train)
+    }else{
+          resps <- resps %>% rename(ses = test)
+    }
     
     ###
-    # extract the start and end of each trial
-    resps <- resps %>%  
-      rename(context = cond) %>% 
-      mutate(door_correct = case_when(door_p>0~1,door_p==0~0,.default=0)) %>% 
-      mutate(change = c(0,diff(open_d))) %>% 
-      mutate(change_d = c(0,diff(door))) %>%
-      mutate(on = case_when(change==9~TRUE,change==1~TRUE,change==-9~FALSE,change==-1~FALSE,change==-8~TRUE,change==8~TRUE,change_d!=0~TRUE,.default=FALSE)) %>% 
-      mutate(off = case_when(change==-9~TRUE,change==-1~TRUE,change==9~FALSE,change==1~FALSE,change==-8~TRUE,change==8~TRUE,change_d!=0~TRUE,.default=FALSE)) %>% 
-      mutate(off = c(off[2:length(off)],TRUE))
-    offset <- resps %>% filter(off == TRUE) %>% select(onset) %>% rename(offset = onset)
-    onset <- resps %>% filter(on == TRUE) %>% select(!(change:off)) 
-    if(length(offset$offset) > length(onset$onset)){
-      resps$on[1]=TRUE
-      onset <- resps %>% filter(on == TRUE) %>% select(!(change:off)) 
-    }
-    resps <- bind_cols(onset,offset) %>% select(!door_p:y)
-    if(ses == 'ses-train'){resps <- resps %>% rename(ses = train)}else{resps <- resps %>% rename(ses = test)}
+    # find the important events
+    resps <- resps %>% #select onsets and offsets of events (hovers or clicks)
+      mutate(on = c(onset[[1]],case_when(diff(open_d)!=0~onset[2:length(onset)],diff(door)!=0~onset[2:length(onset)],.default=NA))) %>% #find onsets
+      mutate(off = c(case_when(diff(open_d)!=0~onset[1:length(onset)-1],diff(door)!=0~onset[1:length(onset)-1],.default=NA),onset[[length(onset)]])) %>% #find offsets
+      filter(!is.na(on) | !is.na(off)) %>% #trim to just onsets and offsets
+      mutate(off = c(off[2:length(off)],NA)) %>% #shift offsets up to create one row per event
+      filter(!is.na(on)) %>% #clear out excess rows
+      mutate(off = case_when(!is.na(off)~off,is.na(off)~c(on[2:length(on)],NA),.default=NA)) #if two onsets occured back-to-back, use the second onset as the first offset
     
-    # separate click and hover responses
-    clicks <- resps %>% filter(open_d == 1) %>% select(!open_d) 
-    tmp <- resps %>% filter(open_d == 9) %>% select(!open_d) 
-    hovers <- tmp[0,]
-    for(i in 1:2){
-      doors <- resps %>% filter(context == i) %>% filter(door_correct == 1) %>% group_by(context) %>% distinct(door) %>% pivot_wider(names_from = context, values_from = door)
-      tmp2 <- tmp %>% mutate(door_correct = case_when(door %in% doors[[1]][[1]]~1,.default=0) )
-      hovers <- rbind(hovers,tmp2)
+    #   optionally, remove events that lasted less than some duration threshold. this is probably not important for clicks, but we could set a threshold for hovers
+    if(apply_threshold){
+      resps <- resps %>% 
+        mutate(exclude = case_when(off-on<min_dur~TRUE,off-on>=min_dur~FALSE,.default=NA)) %>% 
+        filter(!exclude)      
     }
 
-    # add switch/stay variable
+    ###
+    # code door by whether it's part of current context, other context, or no context
+    doors <- resps %>% filter(door_correct == 1) %>% group_by(context) %>% distinct(door) 
+    tmp <- list()
+    for(i in 1:2){
+      tmp[[i]] <- resps %>% filter(context==i) %>% 
+        mutate(door_cc = case_when(door %in% filter(doors,context==i)$door~1,.default=0)) %>% 
+        mutate(door_oc = case_when((!(door %in% filter(doors,context==i)$door) & door %in% doors$door)~1,.default=0))
+    }
+    resps <- rbind(tmp[[1]],tmp[[2]])
+    
+    ###
+    # format click and hover events
+    resps <- resps %>% select(!c(onset,door_p:y)) #remove unnecessary variables
+    clicks <- resps %>% filter(open_d == 1) %>% select(!open_d) #find click events
+    hovers <- resps %>% filter(open_d == 9) %>% select(!open_d) %>% mutate(door_correct = door_cc)
+
+    ###
+    # record switch/stay information
+    #   record whether each trial starts with a context switch
     clicks <- clicks %>% mutate(switch = c(0,case_when(diff(context) !=0 ~ 1,.default=0)))
     hovers <- hovers %>% mutate(switch = c(0,case_when(diff(context) !=0 ~ 1,.default=0)))
     
-    if(ses == 'ses-train'){
-      # calculate the switch rate
-      
+    #   record the training switch rate. for the test phase, copy across the training switch rate
+    if(ses == 'ses-train'){# calculate the switch rate
       sr <- clicks %>% summarise(sr = mean(switch))
       if(sr$sr[[1]]<.05){ #low switch rate
         clicks <- clicks %>% mutate(train_type = c(kronecker(matrix(1,nrow(clicks),1),1)))
@@ -52,9 +77,7 @@ get_data <- function(path,exp,sub,ses,train_type){
         clicks <- clicks %>% mutate(train_type = c(kronecker(matrix(1,nrow(clicks),1),2)))
         hovers <- hovers %>% mutate(train_type = c(kronecker(matrix(1,nrow(hovers),1),2)))
       }
-    }else{
-      # use the switch rate we calculated from their training data
-      
+    }else{# use the switch rate we calculated from their training data
       clicks <- clicks %>% mutate(train_type = c(kronecker(matrix(1,nrow(clicks),1),train_type$train_type[[1]])))
       hovers <- hovers %>% mutate(train_type = c(kronecker(matrix(1,nrow(hovers),1),train_type$train_type[[1]])))
     }
