@@ -4,7 +4,9 @@ This repository holds analysis code in R for human behavioural data from a rules
 
 ### Cloning
 
-To clone, create a local directory called 'doors'. You'll also need to make a GitHub account, 'fork' the doors repository, and create a personal access token with repository access. Then, in Terminal, 
+Start by making a GitHub account! 'Fork' the doors repository, and create a personal access token with repository access. 
+
+Next, create a local directory called 'doors'. Then, in Terminal, 
 
 ```bash
 cd <directory>
