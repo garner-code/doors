@@ -53,7 +53,8 @@ get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
         mutate(door_cc = case_when(door %in% filter(doors,context==i)$door~1,.default=0)) %>% 
         mutate(door_oc = case_when((!(door %in% filter(doors,context==i)$door) & door %in% doors$door)~1,.default=0))
     }
-    resps <- rbind(tmp[[1]],tmp[[2]])
+    resps <- rbind(tmp[[1]],tmp[[2]]) %>% arrange(t)
+    
     
     ###
     # format click and hover events
@@ -68,14 +69,17 @@ get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
     hovers <- hovers %>% mutate(switch = c(0,case_when(diff(context) !=0 ~ 1,.default=0)))
     
     #   record the training switch rate. for the test phase, copy across the training switch rate
-    if(ses == 'ses-train'){# calculate the switch rate
-      sr <- clicks %>% summarise(sr = mean(switch))
-      if(sr$sr[[1]]<.05){ #low switch rate
-        clicks <- clicks %>% mutate(train_type = c(kronecker(matrix(1,nrow(clicks),1),1)))
-        hovers <- hovers %>% mutate(train_type = c(kronecker(matrix(1,nrow(hovers),1),1)))
-      }else{
+    if(ses == 'ses-learn'){ # leave the training type variable empty (NA)
+      clicks <- clicks %>% mutate(train_type = c(kronecker(matrix(1,nrow(clicks),1),train_type)))
+      hovers <- hovers %>% mutate(train_type = c(kronecker(matrix(1,nrow(hovers),1),train_type)))
+    }else if(ses == 'ses-train'){# calculate the switch rate
+      sr <- clicks %>% group_by(t) %>% summarise(sr = max(switch)) %>% ungroup() %>% summarise(sr = mean(sr))
+      if(sr$sr[[1]]>.2){ #high switch rate (30%, but will be nearer 0.296875)
         clicks <- clicks %>% mutate(train_type = c(kronecker(matrix(1,nrow(clicks),1),2)))
         hovers <- hovers %>% mutate(train_type = c(kronecker(matrix(1,nrow(hovers),1),2)))
+      }else{ #low switch rate
+        clicks <- clicks %>% mutate(train_type = c(kronecker(matrix(1,nrow(clicks),1),1)))
+        hovers <- hovers %>% mutate(train_type = c(kronecker(matrix(1,nrow(hovers),1),1)))
       }
     }else{# use the switch rate we calculated from their training data
       clicks <- clicks %>% mutate(train_type = c(kronecker(matrix(1,nrow(clicks),1),train_type$train_type[[1]])))

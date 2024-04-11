@@ -37,7 +37,7 @@ If there are no folders called 'fig' and 'res', that's because Git is ignoring t
 - Open 'doors.Rproj'. This will open R with project-specific settings. 
 - The first time you do this, you should be prompted to run `renv::restore()` to set up all the packages that the project needs. Enter 'y' to accept.
 
-- Open 'run_analysis.R'. This is the controlling script for 'get_data.R'. Together, they filter out excess information in our data files and sort them ready for analysis. 
+- Open 'run_wrangling.R'. This is the controlling script for 'get_data.R'. Together, they filter out excess information in our data files and sort them ready for analysis. 
 - Update the data path
 
 <!--I've written an absolute path for the data, which makes it easy for me to run the script on data that are stored outside the project directory. The path is specific to my computer, so you'll need to update it before you run the script. You can use your own absolute path (e.g. '\\C:\me\data\doors', '/Users/me/data/doors'), OR, if the data are inside the project, use file.path(project_path,'data'). Just make sure to add 'data' to your list of directories in .gitignore so git won't try to track or upload it!-->

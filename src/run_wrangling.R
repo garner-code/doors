@@ -4,9 +4,7 @@
 # TODO:
 # remove redundancy bw door_correct and door_cc
 # save full click and hover data as well as trial- and subject-grouped results
-# discuss: rt to first correct click onset, or offset?
 # produce alternate results grouped by door identity instead of nclicks
-# add functionality to track stereotypy
 
 ###
 # sources
@@ -15,20 +13,19 @@ library(tidyverse)
 wd <- dirname(rstudioapi::getSourceEditorContext()$path)
 source(file.path(wd,'get_data.R'))
 source(file.path(wd,'get_subs.R'))
-source(file.path(wd,'get_transitions.R'))
 
 # essentials
 getwd()
 project_path <- getwd() #if you open the project thru doors.Rproj, your working directory will automatically be the project path
-data_path <- '/Users/lydiabarnes/Documents/academe/data/doors' #if data are within the project directory, update to file.path(project_path,'data')
+data_path <- '/Users/lydiabarnes/OneDrive - UNSW/task switch and transfer/data-sandpit/pilot-data'
 
 # settings
-exp <- 'exp_lt' #experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
-subs <- get_subs(exp)
-sess <- c('ses-train','ses-test') #session: 'ses-learn','ses-train','ses-test'. usually want 'ses-test'.
+version <- '20240409' #pilot: 20240325 (train and test), 20240409 (D&E learn and train)
+exp <- 'exp_ts' #experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
+subs <- get_subs(exp,version)
+sess <- c('ses-learn','ses-train') #session: 'ses-learn','ses-train','ses-test'. usually want 'ses-test'.
 mes <- 'clicks' #measure: 'clicks' or 'hovers'. usually want 'clicks'.
 if(mes=='clicks'){idx <- 1}else{idx <- 2}
-version <- '20240325' #pilot: 20240325
 apply_threshold <- FALSE #only retain events that lasted more than a given duration?
 min_dur <- 0.1 #minimum duration 
 
