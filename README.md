@@ -2,11 +2,11 @@
 
 This repository holds analysis code in R for human behavioural data from a rules-based search task. 
 
-### Cloning
+### Cloning (optional)
 
-Start by making a GitHub account! 'Fork' the doors repository, and create a personal access token with repository access. 
+If you want to follow along with the project's updates using git, you can make a GitHub account, 'fork' the doors repository to your account, and create a personal access token with repository access. 
 
-Next, create a local directory called 'doors'. Then, in Terminal, 
+Next, create a local directory called 'doors'. In Terminal, 
 
 ```bash
 cd <directory>
@@ -21,6 +21,10 @@ cd /Users/me/Documents/projects/doors
 git init
 git remote add origin https://ilovescience:d2840ajdilt49035iadf_PAT@github.com/ilovescience/doors.git
 ```
+
+### Manual downloading (instead of cloning)
+
+You can manually download the code instead, and skip cloning. To do that, go to the project on GitHub, click on the green 'Code' button, and select 'Download ZIP'. Just keep in mind that you will have to go back to GitHub and re-download the code to get the latest updates.
 
 ### The project
 
@@ -46,6 +50,6 @@ If there are no folders called 'fig' and 'res', that's because Git is ignoring t
 
 <!--You can choose which experiment version (task switching or transfer) and which session (learning, training, or test) you want to view, as well as whether you care about clicks or mouse position ('hover'). The 'version' variable changes the output file names to separate results from piloting and subsequent experiments. You could use e.g. 'piloting', 'study01', 'study02' etc. to distinguish sequential experiments, or name each experiment by the date on which it starts. The important thing is having a new identifier every time the task code changes (e.g. if you do a second round of experiments), so that we are always analysing data that belong together.-->
 
-- Click anywhere in the script, and press CTRL+Shift+S or CMD+Shift+S to run!
+- Select all (CMD+A) and press Return (Enter) to run!
 
 - To create a plot of the results, open 'make_figs.R', update its settings as you did for run_analysis.R, and run.

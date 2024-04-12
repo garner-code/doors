@@ -1,12 +1,31 @@
 get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
   # reads in trial info and sample data from 'trls' and 'beh' files and formats into a one-row-per-trial data frame
 
-  trials_here <- file.exists(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_trls.tsv',sep='_')))
-  resps_here <- file.exists(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_beh.tsv',sep='_')))
+  if(version=='pilot-data-00' || version=='pilot-data-01' || ses != 'ses-learn'){
+    success <- c()
+    success <- rbind(success,file.exists(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_trls.tsv',sep='_'))))
+    success <- rbind(success,file.exists(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_beh.tsv',sep='_'))))
+  }else{
+    haus <- c('house-1','house-2')
+    success <- c()
+    for(h in haus){
+      success <- rbind(success,file.exists(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,h,'task-mforage_trls.tsv',sep='_'))))
+      success <- rbind(success,file.exists(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,h,'task-mforage_beh.tsv',sep='_'))))
+    }
+  }
 
-  if(trials_here & resps_here){
-    trials <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_trls.tsv',sep='_')),header = TRUE)
-    resps <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_beh.tsv',sep='_')),header = TRUE)
+
+  if(all(success)){
+    if(version=='pilot-data-00' || version=='pilot-data-01' || ses != 'ses-learn'){
+      trials <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_trls.tsv',sep='_')),header = TRUE)
+      resps <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_beh.tsv',sep='_')),header = TRUE)     
+    }else{
+        trials <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-1','task-mforage_trls.tsv',sep='_')),header = TRUE)
+        trials <- rbind(trials,read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-2','task-mforage_trls.tsv',sep='_')),header = TRUE))
+        resps <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-1','task-mforage_beh.tsv',sep='_')),header = TRUE)
+        resps <- rbind(resps,read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-1','task-mforage_beh.tsv',sep='_')),header = TRUE))
+    }
+
 
     ###
     # trim the data

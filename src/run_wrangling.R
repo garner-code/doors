@@ -15,19 +15,25 @@ source(file.path(wd,'get_data.R'))
 source(file.path(wd,'get_subs.R'))
 
 # essentials
-getwd()
+getwd() #check what directory (folder) we are in. this will be the doors project analysis directory, provided you have opened the project by clicking on
 project_path <- getwd() #if you open the project thru doors.Rproj, your working directory will automatically be the project path
-data_path <- '/Users/lydiabarnes/OneDrive - UNSW/task switch and transfer/data-sandpit/pilot-data'
 
-# settings
-version <- '20240409' #pilot: 20240325 (train and test), 20240409 (D&E learn and train)
+# settings 
+#   !you will want to update these settings a lot during piloting, as the task code or the way you test changes, and as you test participants on different subsets of the task phases
+version <- 'pilot-data-01' #pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
 exp <- 'exp_ts' #experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
-subs <- get_subs(exp,version)
-sess <- c('ses-learn','ses-train') #session: 'ses-learn','ses-train','ses-test'. usually want 'ses-test'.
+sess <- c('ses-learn','ses-train') #session: 'ses-learn','ses-train','ses-test'. can select one (e.g. ses <- c('ses-learn')) or multiple (e.g. ses <- c('ses-train','ses-test'))
+
+#   !you will need to change this to match the location of OneDrive on your personal computer
+data_path <- file.path('/Users/lydiabarnes/OneDrive - UNSW/task switch and transfer/data-sandpit',version)
+
+#   !you can change the following settings if you want to, but the defaults will usually be fine
 mes <- 'clicks' #measure: 'clicks' or 'hovers'. usually want 'clicks'.
 if(mes=='clicks'){idx <- 1}else{idx <- 2}
 apply_threshold <- FALSE #only retain events that lasted more than a given duration?
 min_dur <- 0.1 #minimum duration 
+
+subs <- get_subs(exp,version) #now that we know which experiment and version we want to look at, let's load the list of subjects from get_subs
 
 ###
 # format the raw data 
