@@ -34,7 +34,7 @@ The project has these sub-directories:
 - res = results, i.e. summary metrics extracted from raw data files stored elsewhere
 - src = source code used to extract metrics and produce figures
 
-If there are no folders called 'fig' and 'res', that's because Git is ignoring them. You will need to create your own locally.
+If there are no folders called 'fig' and 'res', that's because git is ignoring them. You will need to create your own locally. If you have cloned the repository and are pushing you're changes to GitHub, make sure you add the 'fig' and 'res' folders to your own .gitignore file to keep those aspects of the project private.
 
 ### Running the code
 
@@ -44,12 +44,14 @@ If there are no folders called 'fig' and 'res', that's because Git is ignoring t
 - Open 'run_wrangling.R'. This is the controlling script for 'get_data.R'. Together, they filter out excess information in our data files and sort them ready for analysis. 
 - Update the data path
 
-<!--I've written an absolute path for the data, which makes it easy for me to run the script on data that are stored outside the project directory. The path is specific to my computer, so you'll need to update it before you run the script. You can use your own absolute path (e.g. '\\C:\me\data\doors', '/Users/me/data/doors'), OR, if the data are inside the project, use file.path(project_path,'data'). Just make sure to add 'data' to your list of directories in .gitignore so git won't try to track or upload it!-->
+> Look for a variable called 'data_path'. I've written an absolute path for the data, which makes it easy for me to run the script on data that are stored outside the project directory. The path is specific to my computer, so you'll need to update it before you run the script. Where it says '/Users/lydiabarnes/OneDrive - UNSW/task switch and transfer/data-sandpit', you will need to substitute your own path. 
+>
 
 - Select your settings
 
-<!--You can choose which experiment version (task switching or transfer) and which session (learning, training, or test) you want to view, as well as whether you care about clicks or mouse position ('hover'). The 'version' variable changes the output file names to separate results from piloting and subsequent experiments. You could use e.g. 'piloting', 'study01', 'study02' etc. to distinguish sequential experiments, or name each experiment by the date on which it starts. The important thing is having a new identifier every time the task code changes (e.g. if you do a second round of experiments), so that we are always analysing data that belong together.-->
+> You can choose which experiment version (task switching or transfer) and which session (learning, training, or test) you want to view, as well as whether you care about clicks or mouse position ('hover'). The 'version' variable changes the output file names to separate results from piloting and subsequent experiments. You could use e.g. 'piloting', 'study01', 'study02' etc. to distinguish sequential experiments, or name each experiment by the date on which it starts. The important thing is having a new identifier every time the task code changes (e.g. if you do a second round of experiments), so that we are always analysing data that belong together.
+>
 
-- Select all (CMD+A) and press Return (Enter) to run!
+- Select all CMD+A (or CTRL+A) and press CMD+Enter (CTRL+Enter) to run!
 
 - To create a plot of the results, open 'make_figs.R', update its settings as you did for run_analysis.R, and run.
