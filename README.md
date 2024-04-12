@@ -53,5 +53,16 @@ If there are no folders called 'fig' and 'res', that's because git is ignoring t
 >
 
 - Select all CMD+A (or CTRL+A) and press CMD+Enter (CTRL+Enter) to run!
-
 - To create a plot of the results, open 'make_figs.R', update its settings as you did for run_analysis.R, and run.
+
+### Editing the code
+
+If you're feeling brave, you can...
+
+Look inside get_data.R. This is where the raw files, with one row per sample (~every 20 ms), are loaded and filtered. 
+
+Adjust the 'summary' steps in run_wrangling.R. These commands (e.g. `res <- grp_data %>% group_by(sub...) %>% summarise(switch = max(switch)...)` ) dictate what summaries you want for what aspects of your data. For example, we usually want to have separate output rows for each subject, so `group_by()` will almost always contain `sub`. You can remove `context` from `group_by` if you want to see someone's overall accuracy and don't care about whether it varied with context. The `summarise` function gets our averages and sums. If you want to know whether people were more likely to click in the current or other context, you could add a row to `summarise` along the lines of `set_accuracy = n_cc/n_oc` (number of clicks in current context compared to in other context). 
+
+You can also filter the data before you do your summaries. For example, if you want to discard switch trials all together, you can add `res -> res %>% filter(switch==0)` after getting the results by trial, but before getting the results by subject. Filtering keeps only the rows that you've specified. In this example, it would keep rows on which there was no switch, which are marked as 0 in the data frame. 
+
+You can try any and all these things just to see what happens. You can save the results to a file (click on the respective `write_csv(res,fnl)` and press CMD+Enter) and view them in Excel, or just run the thing you want to try (select only that text and press CMD+Enter) and view the res variable by clicking on it in the Environment (top right of your RStudio page). You can always go back to the code on GitHub if you don't like your modifications!
