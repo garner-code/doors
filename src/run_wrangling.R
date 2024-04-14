@@ -26,6 +26,9 @@ sess <- c('ses-learn','ses-train') #session: 'ses-learn','ses-train','ses-test'.
 
 #   !you will need to change this to match the location of OneDrive on your personal computer
 data_path <- file.path('/Users/lydiabarnes/OneDrive - UNSW/task switch and transfer/data-sandpit',version)
+if (!dir.exists(data_path)){
+  stop(paste0(data_path,' does not exist'))
+}
 
 #   !you can change the following settings if you want to, but the defaults will usually be fine
 mes <- 'clicks' #measure: 'clicks' or 'hovers'. usually want 'clicks'.
