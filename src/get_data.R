@@ -14,7 +14,6 @@ get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
     }
   }
 
-
   if(all(success)){
     if(version=='pilot-data-00' || version=='pilot-data-01' || ses != 'ses-learn'){
       trials <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_trls.tsv',sep='_')),header = TRUE)
@@ -108,6 +107,6 @@ get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
     return(list(clicks,hovers))
     
   }else{
-    warning(paste('check data for ',exp,sub,ses,sep='/'))
+    stop(paste('check data for',file.path(data_path,exp,sub,ses)))
   }
 }

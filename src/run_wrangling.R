@@ -20,7 +20,7 @@ project_path <- getwd() #if you open the project thru doors.Rproj, your working 
 
 # settings 
 #   !you will want to update these settings a lot during piloting, as the task code or the way you test changes, and as you test participants on different subsets of the task phases
-version <- 'pilot-data-01' #pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
+version <- 'pilot-data-02' #pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
 exp <- 'exp_ts' #experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
 sess <- c('ses-learn','ses-train') #session: 'ses-learn','ses-train','ses-test'. can select one (e.g. ses <- c('ses-learn')) or multiple (e.g. ses <- c('ses-train','ses-test'))
 
