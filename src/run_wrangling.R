@@ -79,6 +79,12 @@ res <- grp_data %>% group_by(sub,ses,t,context,train_type) %>% summarise(
 )
 rt <- grp_data %>% group_by(sub,ses,t,context,train_type) %>% filter(door_correct==1) %>% summarise(rt = min(off)) #time to first correct click offset
 res$rt <- rt$rt
+
+## check that the results directory exists. if it doesn't, create it.
+if(!dir.exists(file.path(project_path,'res'))){
+  dir.create(file.path(project_path,'res'))
+}
+## save the trial data
 fnl <- file.path(project_path,'res',paste(paste(version,exp,mes,'trl',sep='_'),'.csv',sep = ""))
 write_csv(res,fnl)
 
