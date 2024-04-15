@@ -21,8 +21,9 @@ get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
     }else{
         trials <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-1','task-mforage_trls.tsv',sep='_')),header = TRUE)
         trials <- rbind(trials,read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-2','task-mforage_trls.tsv',sep='_')),header = TRUE))
+        
         resps <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-1','task-mforage_beh.tsv',sep='_')),header = TRUE)
-        resps <- rbind(resps,read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-1','task-mforage_beh.tsv',sep='_')),header = TRUE))
+        resps <- rbind(resps,read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-2','task-mforage_beh.tsv',sep='_')),header = TRUE))
     }
 
 
