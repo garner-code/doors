@@ -14,6 +14,7 @@ get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
     }
   }
 
+  browser()
   if(all(success)){
     if(version=='pilot-data-00' || version=='pilot-data-01' || ses != 'ses-learn'){
       trials <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'task-mforage_trls.tsv',sep='_')),header = TRUE)
@@ -22,8 +23,8 @@ get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
         trials <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-1','task-mforage_trls.tsv',sep='_')),header = TRUE)
         trials <- rbind(trials,read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-2','task-mforage_trls.tsv',sep='_')),header = TRUE))
         
-        resps <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-1','task-mforage_beh.tsv',sep='_')),header = TRUE)
-        resps <- rbind(resps,read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-2','task-mforage_beh.tsv',sep='_')),header = TRUE))
+        resps_1 <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-1','task-mforage_beh.tsv',sep='_')),header = TRUE)
+        resps_2 <- read.table(file.path(data_path,exp,sub,ses,'beh',paste(sub,ses,'house-2','task-mforage_beh.tsv',sep='_')),header = TRUE)
     }
 
 
@@ -31,8 +32,15 @@ get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
     # trim the data
     if (ses == 'ses-learn'){ # remove practice trials and reset trial numbers
       trials <- trials %>% filter (t != 999)
-      resps <- resps %>% filter (cond != 3)
-      resps$t <- resps$t-5      
+      if(version=='pilot-data-00' || version=='pilot-data-01'){
+        resps <- resps %>% filter (cond != 3)
+        resps$t <- resps$t-5 
+      }else{
+        resps_1 <- resps_1 %>% filter(cond!=3) #remove practice trials from house-1
+        resps_1$t <- resps_1$t-5 #adjust the trial counter for house-1, now that practice trials are gone
+        resps_2$t <- resps_2$t+resps_1$t[nrow(resps_1)]
+        resps <- rbind(resps_1,resps_2)
+      }
     }
     resps <- resps %>% filter(door>0) #we only care about samples in which people hovered or clicked on a door
     resps <- resps %>% #clarify some variables
