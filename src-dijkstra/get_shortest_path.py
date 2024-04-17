@@ -20,7 +20,7 @@ NB:
     path, but dropping the longest vertex.
 '''
 
-#TODO: write your own dijkstra.py to get the shortest route through ALL doors.
+#TODO: get the shortest route through ALL doors. see https://gis.stackexchange.com/questions/420940/shortest-path-touching-all-points.
 #TODO: save output.
 #TODO: export dependencies to .yaml 
 
@@ -28,28 +28,40 @@ NB:
 import numpy as np
 import scipy
 
-from dijkstras import Graph
+from solve_tsp import travelling_salesman, hamiltonian_cycle
 
 #  read the graph
 graph = np.load('src-dijkstra/graph.npy') 
-
-#   format the graph for dijkstra algorithm
-g = Graph()
-for row in range(0,np.shape(graph)[0]): 
-    name = str(row+1) #don't zero-index
-    edges = dict(enumerate(graph[row],1))
-    edges = {str(k):v for k,v in edges.items()} #Graph class expects dictionary keys to be strings
-
-    g.add_vertex(name,edges)
 
 #   read the trial list from sub_infos.mat
 trial_list = scipy.io.loadmat('src-dijkstra/sub_infos')
 trial_list = trial_list['sub_infos']
 
-print(g.shortest_path('1','16'))
-
 idx = range(2,6)
 step = 4
 for subject in range(0,np.shape(trial_list)[1]):
     for context in range(0,2):
-        print()
+
+        #   select the context-relevant doors
+        if context==0:
+            doors = trial_list[subject,idx]
+        else:
+            doors = trial_list[subject,idx+(step*context)]
+
+        #   get their connections
+        this_graph = np.empty((len(doors),len(doors)))
+        for i,door in enumerate(doors):
+            this_graph[i,:] = graph[door-1,doors-1]
+
+        #   get the shortest path(s), requiring a full loop
+        shortest_path_tsp = travelling_salesman(this_graph)
+
+        #   get the shortest path(s), allowing a single visit to each node
+        shortest_path_hc = []; min_path = [];
+        for i in doors:
+            [a,b] = hamiltonian_cycle(this_graph,i)
+            shortest_path_hc.append(a)
+            min_path.append(b)
+        idx = np.where(min_path == np.min(min_path))[0]
+        shortest_path_hc = shortest_path_hc[idx,:]
+        shortest_path_hc = np.asarray(shortest_path_hc)

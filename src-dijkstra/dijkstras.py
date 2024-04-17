@@ -1,5 +1,6 @@
 import sys
 import heapq
+import numpy as np
 
 class Graph:
     
@@ -7,8 +8,8 @@ class Graph:
         self.vertices = {}
         
     def add_vertex(self, name, edges):
-        self.vertices[name] = edges
-    
+        self.vertices[name] = edges      
+
     def shortest_path(self, start, finish):
         distances = {} # Distance from start to node
         previous = {}  # Previous node in optimal path from source
