@@ -10,7 +10,7 @@ from itertools import permutations
 import numpy as np
  
 # implementation of traveling Salesman Problem 
-def travelling_salesman(graph): 
+def travelling_salesman(graph,nodes): 
     V = np.shape(graph)[0]
 
     # list all vertices
@@ -37,7 +37,7 @@ def travelling_salesman(graph):
         # update minimum 
         min_path = min(min_path, current_pathweight) 
 
-        paths.append(i)
+        paths.append(nodes[list(i)])
         weights.append(current_pathweight)
     
     paths = np.asarray(paths)
@@ -47,7 +47,7 @@ def travelling_salesman(graph):
     return paths 
 
 
-def hamiltonian_cycle(graph, s): 
+def hamiltonian_cycle(graph,nodes,s): 
     V = np.shape(graph)[0]
  
     # store all vertex apart from source vertex 
@@ -75,7 +75,7 @@ def hamiltonian_cycle(graph, s):
         min_path = min(min_path, current_pathweight) 
         
         i = (s,) + i #make sure you record the starting point
-        paths.append(i)
+        paths.append(nodes[list(i)])
         weights.append(current_pathweight)
     
     paths = np.asarray(paths)

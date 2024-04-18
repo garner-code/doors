@@ -25,14 +25,13 @@ outputs:
     give more solutions, as the door array is quite symmetrical.
 
 '''
-
-#TODO: save output.
+#https://stackoverflow.com/questions/75114841/debugger-warning-from-ipython-frozen-modules
 #TODO: export dependencies to .yaml 
 
 ## get libraries
 import numpy as np
 import scipy
-
+import json
 from solve_tsp import travelling_salesman, hamiltonian_cycle
 
 #  read the graph
@@ -42,8 +41,6 @@ graph = np.load('graph.npy')
 trial_list = scipy.io.loadmat('sub_infos')
 trial_list = trial_list['sub_infos']
 
-idx = range(2,6)
-step = 4
 tsp_solutions = []
 hc_solutions = []
 for subject in range(0,np.shape(trial_list)[1]):
@@ -54,9 +51,10 @@ for subject in range(0,np.shape(trial_list)[1]):
 
         #   select the context-relevant doors
         if context==0:
-            doors = trial_list[subject,idx]
+            idx = range(2,6)
         else:
-            doors = trial_list[subject,idx+(step*context)]
+            idx = range(6,10)
+        doors = trial_list[subject,idx]
 
         #   get their connections
         this_graph = np.empty((len(doors),len(doors)))
@@ -64,13 +62,13 @@ for subject in range(0,np.shape(trial_list)[1]):
             this_graph[i,:] = graph[door-1,doors-1]
 
         #   get the shortest path(s), requiring a full loop
-        sp_tsp = travelling_salesman(this_graph)
+        sp_tsp = travelling_salesman(this_graph,doors)
 
         #   get the shortest path(s), allowing a single visit to each node
         #       first, get the shortest paths for each start point
         sp_hc = []; min_path = []
         for i in range(0,len(doors)):
-            [a,b] = hamiltonian_cycle(this_graph,i)
+            [a,b] = hamiltonian_cycle(this_graph,doors,i)
             for j in range(0,len(a)):
                 sp_hc.append(a[j])
                 min_path.append(b[j])
@@ -79,10 +77,18 @@ for subject in range(0,np.shape(trial_list)[1]):
         min_idx = np.where(min_path == np.min(min_path))[0]
         sp_hc = np.asarray(sp_hc)[min_idx,:]
 
-        tsp.append(sp_tsp)
-        hc.append(sp_hc)
+        tsp.append(sp_tsp.tolist())
+        hc.append(sp_hc.tolist())
     
     tsp_solutions.append(tsp)
     hc_solutions.append(hc)
 
-    print()
+f = open('tsp_solutions.json','w')
+json.dump(tsp_solutions,f)
+f.close()
+
+f = open('hc_solutions.json','w')
+json.dump(hc_solutions,f)
+f.close()
+
+print()
