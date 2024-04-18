@@ -1,6 +1,8 @@
 '''
 lydia barnes, april 2024
 from: https://www.geeksforgeeks.org/traveling-salesman-problem-tsp-implementation/
+see also https://gis.stackexchange.com/questions/420940/shortest-path-touching-all-points
+
 '''
 
 from sys import maxsize 
@@ -68,16 +70,19 @@ def hamiltonian_cycle(graph, s):
         for j in i: 
             current_pathweight += graph[k][j] 
             k = j 
-        current_pathweight += graph[k][s] 
  
         # update minimum 
         min_path = min(min_path, current_pathweight) 
         
+        i = (s,) + i #make sure you record the starting point
         paths.append(i)
         weights.append(current_pathweight)
     
     paths = np.asarray(paths)
     idx = np.where(np.round(weights,4) == np.round(min_path,4))[0]
-    paths = paths[idx,:]
+    min_paths = []; min_weights = []
+    for i in idx:
+        min_paths.append(paths[i,:])
+        min_weights.append(min_path)
          
-    return paths 
+    return [min_paths,min_weights] 
