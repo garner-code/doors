@@ -41,12 +41,13 @@ graph = np.load('graph.npy')
 trial_list = scipy.io.loadmat('sub_infos')
 trial_list = trial_list['sub_infos']
 
-tsp_solutions = []
-hc_solutions = []
+tsp_solutions = {}
+hc_solutions = {}
+context_names = ['A','B']
 for subject in range(0,np.shape(trial_list)[1]):
 
-    tsp = []
-    hc = []
+    tsp = {}
+    hc = {}
     for context in range(0,2):
 
         #   select the context-relevant doors
@@ -77,11 +78,11 @@ for subject in range(0,np.shape(trial_list)[1]):
         min_idx = np.where(min_path == np.min(min_path))[0]
         sp_hc = np.asarray(sp_hc)[min_idx,:]
 
-        tsp.append(sp_tsp.tolist())
-        hc.append(sp_hc.tolist())
-    
-    tsp_solutions.append(tsp)
-    hc_solutions.append(hc)
+        tsp[context_names[context]] = sp_tsp.tolist()
+        hc[context_names[context]] = sp_hc.tolist()
+
+    tsp_solutions[str(subject+1)] = tsp
+    hc_solutions[str(subject+1)] = hc
 
 f = open('tsp_solutions.json','w')
 json.dump(tsp_solutions,f)
