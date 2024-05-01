@@ -21,16 +21,16 @@ library(tidyjson)
 # settings
 
 #   which dataset?
-version <- 'pilot-data-02' #pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
-exp <- 'exp_ts' #experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
+version <- 'study-01' #pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
+exp <- 'exp_lt' #experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 mes <- 'clicks' #measure: 'clicks' or 'hovers'. usually want 'clicks'.
 
 #   which subject, algorithm, context, session, and trials would you like to view?
-subject <- 10 #subject id, as integer
+subject <- 1 #subject id, as integer
 alg <- 'hc' #shortest path algorithm: 'hc' (hamiltonian cycle) or 'tsp' (travelling salesperson)
 ctx <- 2 #context: 1 or 2
 session <- 2 #session (i.e. learn or train): 1 = learn, 2 = train
-idx <- c(1,5,10,15,20,25) #which trials you'd like to view within this context and session
+idx <- c(1,40,80,120,160) #which trials you'd like to view within this context and session
 
 #   how would you like the figure to look?
 title_sz <- 30
@@ -63,8 +63,12 @@ observed <- observed %>% mutate(x = xloc[door],y = yloc[door])
 #   filter to just this subject, algorithm, context, and session
 opt <- optimal %>% filter(sub == subject,algorithm == alg,context == ctx) %>% mutate(solution_factor = factor(solution)) 
 obs <- observed %>% filter(sub == subject,context == ctx,ses==session)
+
 trials <- unique(obs$t)
+length(trials)
+
 obs <- obs %>% filter(t %in% trials[idx]) %>% mutate(t_factor = factor(t))
+
 
 #   make the figure
 ggplot() + 

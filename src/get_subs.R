@@ -21,6 +21,12 @@ get_subs <- function(exp,version){
     }else{ #lt
       subs <- c('sub-11')
     }
+  }else if(version=='study-01'){
+    if(exp == 'exp_ts'){
+      subs <- c('')
+    }else{
+      subs <- c('sub-01')
+    }
   }
   
 }
