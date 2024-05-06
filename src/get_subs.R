@@ -25,7 +25,7 @@ get_subs <- function(exp,version){
     if(exp == 'exp_ts'){
       subs <- c('')
     }else{
-      subs <- c('sub-01')
+      subs <- c('sub-01','sub-02','sub-03','sub-04')
     }
   }
   
