@@ -26,11 +26,11 @@ exp <- 'exp_lt' #experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning tra
 mes <- 'clicks' #measure: 'clicks' or 'hovers'. usually want 'clicks'.
 
 #   which subject, algorithm, context, session, and trials would you like to view?
-subject <- 1 #subject id, as integer
+subject <- 4 #subject id, as integer
 alg <- 'hc' #shortest path algorithm: 'hc' (hamiltonian cycle) or 'tsp' (travelling salesperson)
 ctx <- 2 #context: 1 or 2
 session <- 2 #session (i.e. learn or train): 1 = learn, 2 = train
-idx <- c(1,40,80,120,160) #which trials you'd like to view within this context and session
+tidx <- c(1,40,80,120,160) #which trials you'd like to view within this context and session
 
 #   how would you like the figure to look?
 title_sz <- 30
@@ -57,17 +57,23 @@ count <- c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)
 doors <- data.frame(xloc,yloc,id,count)
 observed <- observed %>% mutate(x = xloc[door],y = yloc[door])
 
+
 ###
 # plot!
 
 #   filter to just this subject, algorithm, context, and session
 opt <- optimal %>% filter(sub == subject,algorithm == alg,context == ctx) %>% mutate(solution_factor = factor(solution)) 
 obs <- observed %>% filter(sub == subject,context == ctx,ses==session)
-
 trials <- unique(obs$t)
-length(trials)
-
 obs <- obs %>% filter(t %in% trials[idx]) %>% mutate(t_factor = factor(t))
+
+colours <- rep("white",16)
+idx <-  unique(opt$door)
+colours[idx] = "lightgrey"
+
+opt_other <- optimal %>% filter(sub == subject,algorithm == alg,context != ctx) %>% mutate(solution_factor = factor(solution))
+idx <- unique(opt_other$door)
+colours[idx] <- "darkgrey"
 
 
 #   make the figure
@@ -76,12 +82,11 @@ geom_tile(data = doors, aes(x=xloc,y=yloc,fill=id,colour="white"),show.legend=FA
 geom_text(data = doors, aes(x = xloc, y = yloc, label = id),size = 10) +
 geom_path(data = opt, aes(x = x, y = y, group = solution_factor),linewidth = 2,linejoin = "mitre", lineend = "butt",position = position_jitter(width = .1),alpha = .8,arrow = arrow(angle = 15, type = "closed")) +
 geom_path(data = obs, aes(x = x, y = y, group = t_factor, colour = t_factor),linewidth = 2,linejoin = "mitre",lineend = "butt",position = position_jitter(width = .1),alpha = .8,arrow = arrow(angle = 15, type = "closed")) +
-#geom_point(data = obs, aes(x = x, y = y, colour = t_factor),size = 4,position = position_jitter(width = .1)) +
 theme_minimal() + 
 ylim(0.5,4.5) +
 xlim(0.5,4.5) +
-scale_fill_gradientn(colours = c("white","white"),guide = "none") +
-scale_colour_brewer(palette = "BrBG", labels = c(idx,"")) +
+scale_fill_gradientn(colours = colours,guide = "none") +
+scale_colour_brewer(palette = "BrBG", labels = c(tidx,"")) +
 labs(title = "Optimal and Observed Paths During Training",x = "Door Position (x)", y = "Door Position (y)",colour = "Trial") + 
 theme(plot.title = element_text(size = title_sz),
       axis.text.x = element_text(size = label_sz),axis.text.y = element_text(size = label_sz),legend.text = element_text(size=label_sz),
