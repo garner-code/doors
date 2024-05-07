@@ -8,8 +8,9 @@
 ###
 # sources
 library(tidyverse)
-source(file.path(getwd(),'src','get_data.R'))
 source(file.path(getwd(),'src','get_subs.R'))
+source(file.path(getwd(),'src','get_switch.R'))
+source(file.path(getwd(),'src','get_data.R'))
 
 ###
 # settings 

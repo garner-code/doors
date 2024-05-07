@@ -92,9 +92,9 @@ get_data <- function(data_path,exp,sub,ses,train_type,apply_threshold,min_dur){
     ###
     # record switch/stay information
     #   record whether each trial starts with a context switch
-    clicks <- clicks %>% mutate(switch = c(0,case_when(diff(context) !=0 ~ 1,.default=0)))
-    hovers <- hovers %>% mutate(switch = c(0,case_when(diff(context) !=0 ~ 1,.default=0)))
-    
+    clicks <- get_switch(clicks)
+    hovers <- get_switch(hovers)
+
     #   record the training switch rate. for the test phase, copy across the training switch rate
     if(ses == 'ses-learn'){ # leave the training type variable empty (NA)
       clicks <- clicks %>% mutate(train_type = c(kronecker(matrix(1,nrow(clicks),1),train_type)))
