@@ -66,5 +66,5 @@ count_stereo <- function(data) {
     #   take the difference between their distance travelled (bw centre of clicked doors, not true cursor position) and the distance under shortest path
     path_match <- c('')
     
-    return(c(reclicks, transitions_accuracy, path_match))
+    return(list(reclicks, transitions_accuracy, path_match))
 }

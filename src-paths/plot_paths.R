@@ -1,4 +1,6 @@
-# lydia barnes, april 2024 this script plots optimal and observed search path data for the doors
+# lydia barnes, april 2024 
+
+# this script plots optimal and observed search path data for the doors
 # project
 
 # NB: at 2024.04.30, i've calculated optimal paths for the contexts used in the learn and train
