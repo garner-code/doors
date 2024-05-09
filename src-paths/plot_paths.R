@@ -24,11 +24,11 @@ exp <- "exp_lt"  #experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning tr
 mes <- "clicks"  #measure: 'clicks' or 'hovers'. usually want 'clicks'.
 
 # which subject, algorithm, context, session, and trials would you like to view?
-subject <- 4  #subject id, as integer
+subject <- 6  #subject id, as integer
 alg <- "hc"  #shortest path algorithm: 'hc' (hamiltonian cycle) or 'tsp' (travelling salesperson)
 ctx <- 2  #context: 1 or 2
 session <- 2  #session (i.e. learn or train): 1 = learn, 2 = train
-tidx <- c(1, 40, 80, 120, 160)  #which trials you'd like to view within this context and session
+tidx <- c(1, 20, 40, 60, 80)  #which trials you'd like to view within this context and session
 
 # how would you like the figure to look?
 title_sz <- 30
@@ -70,10 +70,10 @@ opt <- optimal %>%
     filter(sub == subject, algorithm == alg, context == ctx) %>%
     mutate(solution_factor = factor(solution))
 obs <- observed %>%
-    filter(sub == subject, context == ctx, ses == session)
+    filter(sub == subject, context == ctx, ses == session, switch == 0)
 trials <- unique(obs$t)
 obs <- obs %>%
-    filter(t %in% trials[idx]) %>%
+    filter(t %in% trials[tidx]) %>%
     mutate(t_factor = factor(t))
 
 colours <- rep("white", 16)
@@ -98,12 +98,12 @@ ggplot() + geom_tile(
     ) +
     geom_path(
         data = opt, aes(x = x, y = y, group = solution_factor),
-        linewidth = 2, linejoin = "mitre", lineend = "butt", position = position_jitter(width = 0.1),
+        linewidth = 2, linejoin = "mitre", lineend = "butt", position = position_jitter(width = 0.1,height=0.1),
         alpha = 0.8, arrow = arrow(angle = 15, type = "closed")
     ) +
     geom_path(
         data = obs, aes(x = x, y = y, group = t_factor, colour = t_factor),
-        linewidth = 2, linejoin = "mitre", lineend = "butt", position = position_jitter(width = 0.1),
+        linewidth = 2, linejoin = "mitre", lineend = "butt", position = position_jitter(width = 0.1,height = 0.1),
         alpha = 0.8, arrow = arrow(angle = 15, type = "closed")
     ) +
     theme_minimal() + ylim(0.5, 4.5) +
@@ -128,7 +128,7 @@ ggplot() + geom_tile(
 fnl <- file.path(
     project_path, "fig", paste(
         paste(
-            version, exp, session, mes, alg, "opt-path", paste("sub", subject, sep = "-"),
+            version, exp, session, mes, alg, "opt-path", paste("sub", subject, "context", ctx, sep = "-"),
             sep = "_"
         ),
         ".pdf", sep = ""

@@ -1,11 +1,15 @@
 
 ### sources
 library(tidyverse)
+library(ggthemes)
+library(ggExtra)
 
 ### settings
 version <- "study-01"  #pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
 exp <- "exp_lt"  #experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 mes <- "clicks"  #measure: 'clicks' or 'hovers'. usually want 'clicks'.
+
+ctx <- 1
 
 # figure settings
 title_sz <- 30
@@ -27,32 +31,36 @@ fnl <- file.path(
 res <- read_csv(fnl)
 
 # make the figure
-res %>% ggplot() + 
+p <- res %>% filter(ses==2,context==ctx) %>% ggplot() + 
   geom_point(
-  aes(x = transition_rate, y = accuracy),
-  show.legend = FALSE, alpha = 1
-) +
-  theme_minimal() + ylim(0,1) + xlim(0,1) +
-  labs(
-    title = "Transition Rate by Accuracy", x = "Transition Rate", y = "Accuracy"
+    aes(x = transition_counts, y = accuracy, colour = factor(subses)),
+    alpha = .8, size = 15#, position = position_jitter(width = 0.1,height=0.01)
   ) +
-  theme(
-    axis.text.x = element_text(size = label_sz),
-    axis.text.y = element_text(size = label_sz),
-    legend.text = element_text(size = label_sz),
-    plot.title = element_text(size = title_sz),
-    axis.title.x = element_text(size = label_sz),
-    axis.title.y = element_text(size = label_sz),
-    legend.title = element_text(size = label_sz)
-  )
+  geom_text(
+    aes(x = transition_counts, y = accuracy, label = sub), 
+    alpha = .8, size = 8, position = position_jitter(width = 0.2,height=0.1)
+  ) +
+  theme_minimal(
+    base_size = label_sz, base_family = "Roboto"
+  ) + ylim(0,1.1) + xlim(.5,4.5) +
+  labs(
+    title = "Transitions by accuracy during training", 
+    x = "Transitions", y = "Accuracy", colour = "Half of session"
+  ) +
+  scale_colour_brewer(palette = "Greens", labels = unique(res$subses)) +
+  theme(panel.background = element_rect(fill="white",colour = "white"), 
+        plot.background = element_rect(fill="white",colour="white"))
+#p <- ggMarginal(p)
 
 # save it
 fnl <- file.path(
   project_path, "fig", paste(
     paste(
-      version, exp, mes, "transitions-accuracy",sep = "_"
+      version, exp, mes, "transitions-accuracy",paste(
+        'context', ctx, sep = "-"
+        ),sep = "_"
     ),
-    ".pdf", sep = ""
+    ".png", sep = ""
   )
 )
-ggsave(fnl, plot = last_plot())
+ggsave(fnl, plot = p)

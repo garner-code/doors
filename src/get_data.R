@@ -147,6 +147,9 @@ get_data <- function(data_path, exp, sub, ses, train_type, apply_threshold, min_
                 mutate(exclude = case_when(off - on < min_dur ~ TRUE, off - on >= min_dur ~ FALSE, .default = NA)) %>%
                 filter(!exclude)
         }
+        
+        trials <- unique(resps$t)
+        resps <- resps %>% mutate(subses = case_when(t %in% trials[1:round(length(trials)/2)] ~ 1, .default = 2))
 
         ### code door by whether it's part of current context, other context, or no context
         doors <- resps %>%
