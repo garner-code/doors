@@ -18,12 +18,7 @@ label_sz <- 20
 mk_sz <- 2
 
 ### plot the data!
-fnl <- file.path(
-    project_path, "res", paste(
-        paste(version, exp, mes, "avg", sep = "_"),
-        ".csv", sep = ""
-    )
-)
+fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "avg", sep = "_"), ".csv", sep = ""))
 res <- read.csv(fnl)
 res <- res %>%
     mutate(switch = case_when(switch == 0 ~ "Stay", switch == 1 ~ "Switch")) %>%
@@ -48,66 +43,28 @@ if (ses == "ses-learn") {
 
     res %>%
         ggplot() + geom_hline(yintercept = 0.25, linetype = "solid", linewidth = 1, alpha = 1, color = "black") +
-        geom_jitter(
-            aes(x = context, y = accuracy),
-            alpha = 0.5, size = mk_sz
-        ) +
-        stat_summary(
-            aes(x = context, y = accuracy),
-            fun.data = "mean_cl_normal", geom = "pointrange", linewidth = 2, size = mk_sz/2, alpha = 1
-        ) +
-        stat_summary(
-            aes(x = context, y = accuracy),
-            fun = "mean", geom = "line", linewidth = 1, alpha = 1
-        ) +
-        theme_minimal() + scale_x_discrete(labels = c("Context A", "Context B")) +
-        labs(title = "", x = "Context", y = "Accuracy (%)") +
-        theme(
-            plot.title = element_text(size = title_sz),
-            axis.text.x = element_text(size = label_sz),
-            axis.text.y = element_text(size = label_sz),
-            legend.text = element_text(size = label_sz),
-            axis.title.x = element_text(size = label_sz),
-            axis.title.y = element_text(size = label_sz),
-            legend.title = element_text(size = label_sz)
-        )
+        geom_jitter(aes(x = context, y = accuracy), alpha = 0.5, size = mk_sz) + stat_summary(aes(x = context,
+        y = accuracy), fun.data = "mean_cl_normal", geom = "pointrange", linewidth = 2, size = mk_sz/2,
+        alpha = 1) + stat_summary(aes(x = context, y = accuracy), fun = "mean", geom = "line", linewidth = 1,
+        alpha = 1) + theme_minimal() + scale_x_discrete(labels = c("Context A", "Context B")) + labs(title = "",
+        x = "Context", y = "Accuracy (%)") + theme(plot.title = element_text(size = title_sz), axis.text.x = element_text(size = label_sz),
+        axis.text.y = element_text(size = label_sz), legend.text = element_text(size = label_sz), axis.title.x = element_text(size = label_sz),
+        axis.title.y = element_text(size = label_sz), legend.title = element_text(size = label_sz))
 
 } else {
     res %>%
         ggplot() + geom_hline(yintercept = 0.25, linetype = "solid", linewidth = 1, alpha = 1, color = "black") +
-        geom_jitter(
-            aes(x = train_type, y = accuracy, shape = switch, color = switch),
-            position = position_jitterdodge(dodge.width = 0.3, jitter.width = 0.1),
-            alpha = 0.5, size = mk_sz
-        ) +
-        stat_summary(
-            aes(x = train_type, y = accuracy, shape = switch, color = switch),
-            fun.data = "mean_cl_normal", geom = "pointrange", position = position_dodge(width = 0.3),
-            linewidth = 2, size = mk_sz/2, alpha = 1
-        ) +
-        stat_summary(
-            aes(x = train_type, y = accuracy, color = switch),
-            fun = "mean", geom = "line", position = position_dodge(width = 0.3),
-            linewidth = 1, alpha = 1
-        ) +
+        geom_jitter(aes(x = train_type, y = accuracy, shape = switch, color = switch), position = position_jitterdodge(dodge.width = 0.3,
+            jitter.width = 0.1), alpha = 0.5, size = mk_sz) + stat_summary(aes(x = train_type, y = accuracy,
+        shape = switch, color = switch), fun.data = "mean_cl_normal", geom = "pointrange", position = position_dodge(width = 0.3),
+        linewidth = 2, size = mk_sz/2, alpha = 1) + stat_summary(aes(x = train_type, y = accuracy, color = switch),
+        fun = "mean", geom = "line", position = position_dodge(width = 0.3), linewidth = 1, alpha = 1) +
         theme_minimal() + scale_shape_discrete(name = "Switch Condition", labels = c("Stay", "Switch")) +
-        scale_color_lancet(guide = "none") +
-        scale_x_discrete(labels = c("Low Switch", "High Switch")) +
-        labs(title = "", x = "Training Condition", y = "Accuracy (%)") +
-        theme(
-            plot.title = element_text(size = title_sz),
-            axis.text.x = element_text(size = label_sz),
-            axis.text.y = element_text(size = label_sz),
-            legend.text = element_text(size = label_sz),
-            axis.title.x = element_text(size = label_sz),
-            axis.title.y = element_text(size = label_sz),
-            legend.title = element_text(size = label_sz)
-        )
+        scale_color_lancet(guide = "none") + scale_x_discrete(labels = c("Low Switch", "High Switch")) +
+        labs(title = "", x = "Training Condition", y = "Accuracy (%)") + theme(plot.title = element_text(size = title_sz),
+        axis.text.x = element_text(size = label_sz), axis.text.y = element_text(size = label_sz), legend.text = element_text(size = label_sz),
+        axis.title.x = element_text(size = label_sz), axis.title.y = element_text(size = label_sz), legend.title = element_text(size = label_sz))
 }
-fnl <- file.path(
-    project_path, "fig", paste(
-        paste(version, exp, ses, mes, "avg", sep = "_"),
-        ".pdf", sep = ""
-    )
-)
+fnl <- file.path(project_path, "fig", paste(paste(version, exp, ses, mes, "avg", sep = "_"), ".pdf",
+    sep = ""))
 ggsave(fnl, plot = last_plot())

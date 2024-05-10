@@ -17,14 +17,12 @@ project_path <- getwd()
 ### format the optimal path data
 
 # make an empty data frame
-optimal <- data.frame(
-    sub = integer(), algorithm = character(), solution = integer(), context = integer(), door = integer(),
-    x = integer(), y = integer()
-)
+optimal <- data.frame(sub = integer(), algorithm = character(), solution = integer(), context = integer(),
+    door = integer(), x = integer(), y = integer())
 
 # map door IDs to x and y positions
-xloc = c(1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4)
-yloc = c(4, 3, 2, 1, 4, 3, 2, 1, 4, 3, 2, 1, 4, 3, 2, 1)
+xloc <- c(1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4)
+yloc <- c(4, 3, 2, 1, 4, 3, 2, 1, 4, 3, 2, 1, 4, 3, 2, 1)
 
 # extract optimal paths for each algorithm, subject, and context
 algs <- c("hc", "tsp")  #shortest path method: 'hc' (hamiltonian cycle) and 'tsp' (travelling salesperson)
@@ -32,12 +30,7 @@ contexts <- c(1, 2)  #context: 1 or 2
 for (alg in algs) {
 
     # read the optimal path data
-    fnl <- file.path(
-        project_path, "src-paths", paste(
-            paste(alg, "solutions", sep = "_"),
-            ".json", sep = ""
-        )
-    )
+    fnl <- file.path(project_path, "src-paths", paste(paste(alg, "solutions", sep = "_"), ".json", sep = ""))
     tmp <- read_json(fnl)
     tmp <- tmp$..JSON
     tmp <- tmp[[1]]
@@ -65,10 +58,6 @@ for (alg in algs) {
 }
 
 ### save the formatted path data
-fnl <- file.path(
-    project_path, "res", paste(
-        paste(version, exp, mes, "opt-path", sep = "_"),
-        ".csv", sep = ""
-    )
-)
+fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "opt-path", sep = "_"), ".csv",
+    sep = ""))
 write_csv(optimal, fnl)
