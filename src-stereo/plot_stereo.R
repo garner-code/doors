@@ -1,4 +1,5 @@
 
+
 ### sources
 library(tidyverse)
 library(ggthemes)
@@ -9,7 +10,7 @@ version <- "study-01"  #pilot-data-00 (train and test), pilot-data-01 (learn and
 exp <- "exp_lt"  #experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 mes <- "clicks"  #measure: 'clicks' or 'hovers'. usually want 'clicks'.
 
-ctx <- 1
+ctx <- 2
 
 # figure settings
 title_sz <- 30
@@ -26,20 +27,32 @@ fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "transition
     sep = ""))
 res <- read_csv(fnl)
 
-# make the figure
+### bi-directional transitions
 p <- res %>%
     filter(ses == 2, context == ctx) %>%
-    ggplot() + geom_point(aes(x = transition_counts, y = accuracy, colour = factor(subses)), alpha = 0.8,
-    size = 15  #, position = position_jitter(width = 0.1,height=0.01)
-) + geom_text(aes(x = transition_counts,
-    y = accuracy, label = sub), alpha = 0.8, size = 8, position = position_jitter(width = 0.2, height = 0.1)) +
+    ggplot() + geom_point(aes(x = transition_counts, y = accuracy, colour = factor(subses)), alpha = 0.8, size = 15) + 
+    geom_text(aes(x = transition_counts,
+    y = accuracy, label = sub), alpha = 0.8, size = 8, position = position_jitter(width = 0.1, height = 0.05)) +
     theme_minimal(base_size = label_sz, base_family = "Roboto") + ylim(0, 1.1) + xlim(0.5, 4.5) + labs(title = "Transitions by accuracy during training",
     x = "Transitions", y = "Accuracy", colour = "Half of session") + scale_colour_brewer(palette = "Greens",
     labels = unique(res$subses)) + theme(panel.background = element_rect(fill = "white", colour = "white"),
     plot.background = element_rect(fill = "white", colour = "white"))
 # p <- ggMarginal(p)
 
-# save it
-fnl <- file.path(project_path, "fig", paste(paste(version, exp, mes, "transitions-accuracy", paste("context",
+fnl <- file.path(project_path, "fig", paste(paste(version, exp, mes, "transitions-bidir", paste("context",
+    ctx, sep = "-"), sep = "_"), ".png", sep = ""))
+ggsave(fnl, plot = p)
+
+### one-way transitions
+p <- res %>%
+    filter(ses == 2, context == ctx) %>%
+    ggplot() + geom_point(aes(x = transition_tril, y = accuracy, colour = factor(subses)), alpha = 0.8, size = 15) + 
+    geom_text(aes(x = transition_tril,
+    y = accuracy, label = sub), alpha = 0.8, size = 8, position = position_jitter(width = 0.1, height = 0.05)) +
+    theme_minimal(base_size = label_sz, base_family = "Roboto") + ylim(0, 1.1) + xlim(0.5, 4.5) + labs(title = "One-way transitions by accuracy during training",
+    x = "Transitions", y = "Accuracy", colour = "Half of session") + scale_colour_brewer(palette = "Greens",
+    labels = unique(res$subses)) + theme(panel.background = element_rect(fill = "white", colour = "white"),
+    plot.background = element_rect(fill = "white", colour = "white"))
+fnl <- file.path(project_path, "fig", paste(paste(version, exp, mes, "transitions-unidir", paste("context",
     ctx, sep = "-"), sep = "_"), ".png", sep = ""))
 ggsave(fnl, plot = p)

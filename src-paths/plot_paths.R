@@ -93,5 +93,5 @@ ggplot() + geom_tile(data = doors, aes(x = xloc, y = yloc, fill = id, colour = "
 
 # save it
 fnl <- file.path(project_path, "fig", paste(paste(version, exp, session, mes, alg, "opt-path", paste("sub",
-    subject, "context", ctx, sep = "-"), sep = "_"), ".pdf", sep = ""))
+    subject, "context", ctx, sep = "-"), sep = "_"), ".png", sep = ""))
 ggsave(fnl, plot = last_plot())
