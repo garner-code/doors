@@ -11,72 +11,76 @@ import numpy as np
  
 # implementation of traveling Salesman Problem 
 def travelling_salesman(graph,nodes): 
-    V = np.shape(graph)[0]
 
     # list all vertices
+    V = np.shape(graph)[0]
     vertex = [] 
     for i in range(V): 
         vertex.append(i) 
- 
-    # store minimum weight
-    min_lweight = maxsize 
+
+    # permute the vertices
     next_permutation=permutations(vertex)
-    paths = []; lweight = [];
+ 
+    # iterate through permutations, recording the distance covered by each path
+    min_distance = maxsize #start with a big number
+    paths = []; distance = []; #make some empty lists
     for i in next_permutation:
  
-        # compute current path weight 
-        current_lweight = 0
-        for c,j in enumerate(i): 
-            k = i[c-1]
-            current_lweight += graph[k][j] #regardless of what happens above, add a step to the loop weight
+        # compute current path distance 
+        current_distance = 0
+        for j,node in enumerate(i): 
+            previous_node = i[j-1]
+            current_distance += graph[previous_node][node] #add to the loop distance
  
-        # update minimum 
-        min_lweight = min(min_lweight, current_lweight) 
+        # do we have a new minimum distance?
+        min_distance = min(min_distance, current_distance) 
 
+        # record all paths and distances
         paths.append(nodes[list(i)])
-        lweight.append(current_lweight)
+        distance.append(current_distance)
     
+    # use the minimum distance to select all shortest paths
     paths = np.asarray(paths)
-    idx = np.where(np.round(lweight,4) == np.round(min_lweight,4))[0]
+    idx = np.where(np.round(distance,4) == np.round(min_distance,4))[0]
     paths = paths[idx,:]
 
-    return [paths,min_lweight]
+    return [paths,min_distance]
 
 
-def hamiltonian_path(graph,nodes,s): 
-    V = np.shape(graph)[0]
+def hamiltonian_path(graph,nodes,source_vertex): 
  
     # store all vertices apart from source vertex 
+    V = np.shape(graph)[0]
     vertex = [] 
     for i in range(V): 
-        if i != s: 
+        if i != source_vertex: 
             vertex.append(i) 
- 
-    # store minimum weight
-    min_path = maxsize 
+
+    # generate permutations
     next_permutation=permutations(vertex)
-    paths = []; weights = []
+ 
+    # iterate over permutations
+    min_distance = maxsize 
+    paths = []; distances = []
     for i in next_permutation:
  
         # compute current path weight 
-        current_pathweight = 0
-        k = s 
-        for j in i: 
-            current_pathweight += graph[k][j] 
-            k = j 
+        current_distance = 0
+        previous_node = source_vertex 
+        for node in i: 
+            current_distance += graph[previous_node][node] 
+            previous_node = node
  
         # update minimum 
-        min_path = min(min_path, current_pathweight) 
+        min_distance = min(min_distance, current_distance) 
         
-        i = (s,) + i #make sure you record the starting point
+        i = (source_vertex,) + i #make sure you record the starting point
         paths.append(nodes[list(i)])
-        weights.append(current_pathweight)
+        distances.append(current_distance)
     
     paths = np.asarray(paths)
-    idx = np.where(np.round(weights,4) == np.round(min_path,4))[0]
-    min_paths = []; min_weights = []
-    for i in idx:
-        min_paths.append(paths[i,:])
-        min_weights.append(min_path)
+    idx = np.where(np.round(distances,4) == np.round(min_distance,4))[0]
+    paths = paths[idx,:]
+    distances = distances[idx,:]
          
-    return [min_paths,min_weights] 
+    return [paths,distances] 

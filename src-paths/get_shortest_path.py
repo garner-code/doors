@@ -47,13 +47,13 @@ graph = np.load('graph.npy')
 trial_list = scipy.io.loadmat('sub_infos')
 trial_list = trial_list['sub_infos']
 
-tsp_solutions = {}
-hp_solutions = {}
+travelling_solutions = {}
+hamiltonian_solutions = {}
 context_names = ['A','B']
 for subject in range(0,np.shape(trial_list)[1]):
 
-    tsp = {}
-    hp = {}
+    these_travelling_solutions = {}
+    these_hamiltonian_solutions = {}
     for context in range(0,2):
 
         #   select the context-relevant doors
@@ -69,40 +69,40 @@ for subject in range(0,np.shape(trial_list)[1]):
             this_graph[i,:] = graph[door-1,doors-1]
 
         #   get the shortest path(s), requiring a full loop
-        [sp_tsp,min_tsp] = travelling_salesman(this_graph,doors)
+        [this_travelling_path,this_travelling_distance] = travelling_salesman(this_graph,doors)
 
         #   get the shortest path(s), allowing a single visit to each node
         #       first, get the shortest path for each start point
-        sp_hp = []; min_hp = []
+        this_hamiltonian_path = []; this_hamiltonian_distance = []
         for i in range(0,len(doors)):
-            [a,b] = hamiltonian_path(this_graph,doors,i)
-            for j in range(0,len(a)):
-                sp_hp.append(a[j])
-                min_hp.append(b[j])
+            [paths,distance] = hamiltonian_path(this_graph,doors,i)
+            for j in range(0,len(paths)):
+                this_hamiltonian_path.append(paths[j])
+                this_hamiltonian_distance.append(distance[j])
 
         #       some start points will allow for shorter paths than others. 
         #       find those:
-        min_idx = np.where(min_hp == np.min(min_hp))[0]
-        sp_hp = np.asarray(sp_hp)[min_idx,:]
+        min_idx = np.where(this_hamiltonian_distance == np.min(this_hamiltonian_distance))[0]
+        this_hamiltonian_path = np.asarray(this_hamiltonian_path)[min_idx,:]
         
         # append the shortest path to the output
-        sp_tsp = sp_tsp.tolist()
-        sp_tsp = [sp_tsp,min_tsp]
-        sp_hp = sp_hp.tolist()
-        sp_hp = [sp_hp,np.min(min_hp)]
+        this_travelling_path = this_travelling_path.tolist()
+        this_travelling_solution = [this_travelling_path,this_travelling_distance]
+        this_hamiltonian_path = this_hamiltonian_path.tolist()
+        this_hamiltonian_solution = [this_hamiltonian_path,np.min(this_hamiltonian_distance)]
 
-        tsp[context_names[context]] = sp_tsp
-        hp[context_names[context]] = sp_hp
+        these_travelling_solutions[context_names[context]] = this_travelling_solution
+        these_hamiltonian_solutions[context_names[context]] = this_hamiltonian_solution
 
-    tsp_solutions[str(subject+1)] = tsp
-    hp_solutions[str(subject+1)] = hp
+    travelling_solutions[str(subject+1)] = these_travelling_solutions
+    hamiltonian_solutions[str(subject+1)] = these_hamiltonian_solutions
 
-f = open('tsp_solutions.json','w')
-json.dump(tsp_solutions,f)
+f = open('travelling_solutions.json','w')
+json.dump(travelling_solutions,f)
 f.close()
 
-f = open('hp_solutions.json','w')
-json.dump(hp_solutions,f)
+f = open('hamiltonian_solutions.json','w')
+json.dump(hamiltonian_solutions,f)
 f.close()
 
 print()
