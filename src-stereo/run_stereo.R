@@ -2,6 +2,8 @@
 # explain performance at test
 
 # TODO: 
+### cluster participants based on stereotypy and accuracy
+### use maggi method to trace change in stereotypy (extent or type)
 
 ### sources
 library(tidyverse)
@@ -24,6 +26,7 @@ if (!dir.exists(data_path)) {
 ### load event data
 fnl <- file.path(data_path, paste(paste(version, exp, mes, "evt", sep = "_"), ".csv", sep = ""))
 data <- read_csv(fnl, show_col_types = FALSE)
+data <- data %>% filter(ses==2)
 
 ### load shortest path data
 fnl <- file.path(data_path, paste(paste(version, exp, mes, "opt-path", sep = "_"), ".csv", sep = ""))
@@ -33,21 +36,9 @@ fnl <- file.path(project_path, "src-paths", "graph.csv")
 graph <- unname(data.matrix(read_csv(fnl, col_names = FALSE, show_col_types = FALSE)))
 
 ### extract stereotypy metrics
-counts <- count_stereo(data, opt, graph)
+stereo <- count_stereo(data, opt, graph)
 
 # save to file
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "reclicks", sep = "_"), ".csv",
-    sep = ""))
-write_csv(counts[[1]], fnl)
+fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "stereotypy", sep = "_"), ".csv", sep = ""))
+write_csv(stereo, fnl)
 
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "transitions", sep = "_"), ".csv",
-    sep = ""))
-write_csv(counts[[2]], fnl)
-
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "travelled", sep = "_"), ".csv",
-    sep = ""))
-write_csv(counts[[3]], fnl)
-
-### cluster participants based on stereotypy and accuracy
-
-### use maggi method to trace change in stereotypy (extent or type)

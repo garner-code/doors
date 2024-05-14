@@ -1,7 +1,10 @@
 '''
 lydia barnes, april 2024
 
-applies dijkstra algorithm to get shortest paths between doors in doors project.
+gets shortest paths between doors in doors project. doors are arranged in a 
+four by four grid and numbered so that column 1 has 1:4, column 2 has 5:8, and 
+so on. we calculate the shortest path only for relevant doors, of which there 
+are four in each of context 1 and context 2.
 
 inputs:
     graph, a numpy file (nrows = ncolumns = nnodes) of connection weights. in
@@ -14,15 +17,18 @@ inputs:
 
 outputs:
     travelling salesman solution: the shortest path that touches all target 
-    doors and returns to the start. the start is irrelevant, because the path
-    is a loop. there will be eight solutions: each start point x each 
-    direction.
+    doors once and returns to the start. the start is irrelevant, because the 
+    path is a loop. there will be at least eight solutions: four start points 
+    and two directions. these are fundamentally the same solution, but we print
+    all of them for clarity. 
 
-    hamiltonian cycle solution: the shortest path that touches all target 
+    shortest hamiltonian path: the shortest path that touches all target 
     doors, visiting each only once (no loop). here, where you start is 
     important, as it allows you to exclude one section of the loop. there will 
-    be two solutions, one the exact opposite of the other. some doors will 
-    give more solutions, as the door array is quite symmetrical.
+    be at least two solutions, because all solutions can go in either direction. 
+    some doors will give more solutions. for example, doors [6 8 13 15] give 
+    two U-shapes and one zig-zag solution, each in two directions, for a total 
+    of six.
 
 '''
 #https://stackoverflow.com/questions/75114841/debugger-warning-from-ipython-frozen-modules
@@ -32,7 +38,7 @@ outputs:
 import numpy as np
 import scipy
 import json
-from solve_tsp import travelling_salesman, hamiltonian_cycle
+from solve_tsp import travelling_salesman, hamiltonian_path
 
 #  read the graph
 graph = np.load('graph.npy') 
@@ -42,12 +48,12 @@ trial_list = scipy.io.loadmat('sub_infos')
 trial_list = trial_list['sub_infos']
 
 tsp_solutions = {}
-hc_solutions = {}
+hp_solutions = {}
 context_names = ['A','B']
 for subject in range(0,np.shape(trial_list)[1]):
 
     tsp = {}
-    hc = {}
+    hp = {}
     for context in range(0,2):
 
         #   select the context-relevant doors
@@ -63,33 +69,41 @@ for subject in range(0,np.shape(trial_list)[1]):
             this_graph[i,:] = graph[door-1,doors-1]
 
         #   get the shortest path(s), requiring a full loop
-        sp_tsp = travelling_salesman(this_graph,doors)
+        [sp_tsp,min_tsp] = travelling_salesman(this_graph,doors)
 
         #   get the shortest path(s), allowing a single visit to each node
-        #       first, get the shortest paths for each start point
-        sp_hc = []; min_path = []
+        #       first, get the shortest path for each start point
+        sp_hp = []; min_hp = []
         for i in range(0,len(doors)):
-            [a,b] = hamiltonian_cycle(this_graph,doors,i)
+            [a,b] = hamiltonian_path(this_graph,doors,i)
             for j in range(0,len(a)):
-                sp_hc.append(a[j])
-                min_path.append(b[j])
+                sp_hp.append(a[j])
+                min_hp.append(b[j])
+
         #       some start points will allow for shorter paths than others. 
         #       find those:
-        min_idx = np.where(min_path == np.min(min_path))[0]
-        sp_hc = np.asarray(sp_hc)[min_idx,:]
+        min_idx = np.where(min_hp == np.min(min_hp))[0]
+        sp_hp = np.asarray(sp_hp)[min_idx,:]
+        
+        # append the shortest path to the output
+        sp_tsp = sp_tsp.tolist()
+        sp_tsp = [sp_tsp,min_tsp]
+        sp_hp = sp_hp.tolist()
+        sp_hp = [sp_hp,np.min(min_hp)]
 
-        tsp[context_names[context]] = sp_tsp.tolist()
-        hc[context_names[context]] = sp_hc.tolist()
+        tsp[context_names[context]] = sp_tsp
+        hp[context_names[context]] = sp_hp
 
     tsp_solutions[str(subject+1)] = tsp
-    hc_solutions[str(subject+1)] = hc
+    hp_solutions[str(subject+1)] = hp
 
 f = open('tsp_solutions.json','w')
 json.dump(tsp_solutions,f)
 f.close()
 
-f = open('hc_solutions.json','w')
-json.dump(hc_solutions,f)
+f = open('hp_solutions.json','w')
+json.dump(hp_solutions,f)
 f.close()
 
 print()
+

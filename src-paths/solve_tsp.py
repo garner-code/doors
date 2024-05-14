@@ -19,38 +19,34 @@ def travelling_salesman(graph,nodes):
         vertex.append(i) 
  
     # store minimum weight
-    min_path = maxsize 
+    min_lweight = maxsize 
     next_permutation=permutations(vertex)
-    paths = []; weights = []
+    paths = []; lweight = [];
     for i in next_permutation:
-        # store current Path weight(cost) 
-        current_pathweight = 0
  
         # compute current path weight 
+        current_lweight = 0
         for c,j in enumerate(i): 
-            try:
-                k = i[c-1]
-            except:
-                k = i[len(i)]
-            current_pathweight += graph[k][j] 
+            k = i[c-1]
+            current_lweight += graph[k][j] #regardless of what happens above, add a step to the loop weight
  
         # update minimum 
-        min_path = min(min_path, current_pathweight) 
+        min_lweight = min(min_lweight, current_lweight) 
 
         paths.append(nodes[list(i)])
-        weights.append(current_pathweight)
+        lweight.append(current_lweight)
     
     paths = np.asarray(paths)
-    idx = np.where(np.round(weights,4) == np.round(min_path,4))[0]
+    idx = np.where(np.round(lweight,4) == np.round(min_lweight,4))[0]
     paths = paths[idx,:]
 
-    return paths 
+    return [paths,min_lweight]
 
 
-def hamiltonian_cycle(graph,nodes,s): 
+def hamiltonian_path(graph,nodes,s): 
     V = np.shape(graph)[0]
  
-    # store all vertex apart from source vertex 
+    # store all vertices apart from source vertex 
     vertex = [] 
     for i in range(V): 
         if i != s: 
@@ -62,10 +58,8 @@ def hamiltonian_cycle(graph,nodes,s):
     paths = []; weights = []
     for i in next_permutation:
  
-        # store current Path weight(cost) 
-        current_pathweight = 0
- 
         # compute current path weight 
+        current_pathweight = 0
         k = s 
         for j in i: 
             current_pathweight += graph[k][j] 
