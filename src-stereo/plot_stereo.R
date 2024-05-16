@@ -10,7 +10,7 @@ version <- "study-01"  #pilot-data-00 (train and test), pilot-data-01 (learn and
 exp <- "exp_lt"  #experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 mes <- "clicks"  #measure: 'clicks' or 'hovers'. usually want 'clicks'.
 
-ctx <- 2
+ctx <- 1
 
 # figure settings
 title_sz <- 30
@@ -64,7 +64,7 @@ ggsave(fnl, plot = p)
 fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "avg", sep = "_"), ".csv",
       sep = ""))
 avg <- read_csv(fnl)
-stereo <- stereo %>% group_by(sub,ses,context) %>% summarise(accuracy = mean(accuracy),match_hp = mean(match_hp),match_tsp=mean(match_tsp),overshoot_tsp=mean(overshoot_tsp),overshoot_hp=mean(overshoot_hp)) # collapse stereo across subsessions
+stereo <- stereo %>% group_by(sub,ses,context) %>% summarise_all(mean)
 avg <- avg %>% filter(ses==3,switch==0)
 stereo$accuracy_test <- avg$accuracy # add test accuracy to stereo results
 
