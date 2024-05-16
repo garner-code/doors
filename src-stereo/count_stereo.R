@@ -69,7 +69,7 @@ count_stereo <- function(data, opt, graph) {
     travelled_hp = double(), shortest_hp = double(), overshoot_hp = double()
   )
   for (su in unique(data$sub)) {
-    for (se in c(1, 2)) {
+    for (se in c(2)) {
       for (co in unique(data$context)) {
         for (ss in unique(data$subses)) {
           # get clicks on stay trials
@@ -102,7 +102,7 @@ count_stereo <- function(data, opt, graph) {
   # put all these measures together
   path_match <- path_match %>%
     group_by(sub, ses, context, subses) %>%
-    summarise_all(mean)
+    summarise_all(mean) %>% select(!t)
   t <- transitions_accuracy %>%
     ungroup() %>%
     select(accuracy, transition_counts)
@@ -122,7 +122,7 @@ compare_paths <- function(graph, events, opt_sub, alg) {
 
   # get the shortest path under this algorithm
   shortest <- opt_sub$path_weight[1]
-
+  
   ### loop through trials, testing whether they used the shortest path, and how much further they travelled
   for (tr in unique(events$t)) {
     trial <- events %>% filter(t == tr)

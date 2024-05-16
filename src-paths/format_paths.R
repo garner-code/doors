@@ -41,7 +41,7 @@ for (alg in algs) {
       # find the relevant optimal paths
       opt <- tmp[[subject]][[ctx]]
 
-      for (i in seq_along(1:length(opt))) {
+      for (i in seq_along(1:length(opt[[1]]))) {
         door <- unlist(opt[[1]][[i]])
         sub <- rep(subject, length(door))
         algorithm <- rep(alg, length(door))
