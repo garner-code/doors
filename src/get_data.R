@@ -1,4 +1,4 @@
-get_data <- function(data_path, exp, sub, ses, train_type, apply_threshold, min_dur) {
+get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, apply_threshold, min_dur) {
   # reads in trial info and sample data from 'trls' and 'beh' files and formats into a
   # one-row-per-trial data frame
 
@@ -80,7 +80,7 @@ get_data <- function(data_path, exp, sub, ses, train_type, apply_threshold, min_
       filter(door > 0) # we only care about samples in which people hovered or clicked on a door
     resps <- resps %>%
       rename(context = cond) %>%
-      mutate(door_correct = case_when(door_p > 0 ~ 1, door_p == 0 ~ 0, .default = 0))
+      mutate(door_cc = case_when(door_p > 0 ~ 1, door_p == 0 ~ 0, .default = 0))
     if (ses == "ses-learn") {
       resps <- resps %>%
         rename(ses = learn)
@@ -117,14 +117,13 @@ get_data <- function(data_path, exp, sub, ses, train_type, apply_threshold, min_
 
     ### code door by whether it's part of current context, other context, or no context
     doors <- resps %>%
-      filter(door_correct == 1) %>%
+      filter(door_cc == 1) %>%
       group_by(context) %>%
       distinct(door)
     tmp <- list()
     for (i in 1:2) {
       tmp[[i]] <- resps %>%
         filter(context == i) %>%
-        mutate(door_cc = case_when(door %in% filter(doors, context == i)$door ~ 1, .default = 0)) %>%
         mutate(door_oc = case_when((!(door %in% filter(doors, context == i)$door) & door %in%
           doors$door) ~ 1, .default = 0))
     }
@@ -141,20 +140,14 @@ get_data <- function(data_path, exp, sub, ses, train_type, apply_threshold, min_
     hovers <- resps %>%
       filter(open_d == 9) %>%
       select(!open_d) %>%
-      mutate(door_correct = door_cc)
+      mutate(door_cc = door_cc)
 
-    ### record switch/stay information record whether each trial starts with a context switch
+    # record whether each trial starts with a context switch
     clicks <- get_switch(clicks)
     hovers <- get_switch(hovers)
 
-    # record the training switch rate. for the test phase, copy across the training switch rate
-    # leave the training type variable empty (NA)
-    if (ses == "ses-learn") {
-      clicks <- clicks %>%
-        mutate(train_type = c(kronecker(matrix(1, nrow(clicks), 1), train_type)))
-      hovers <- hovers %>%
-        mutate(train_type = c(kronecker(matrix(1, nrow(hovers), 1), train_type)))
-    } else if (ses == "ses-train") {
+    # mark the train phase switch rate and context-one doors in the test phase data
+    if (ses == "ses-train") {
       # calculate the switch rate
       sr <- clicks %>%
         group_by(t) %>%
@@ -162,24 +155,37 @@ get_data <- function(data_path, exp, sub, ses, train_type, apply_threshold, min_
         ungroup() %>%
         summarise(sr = mean(sr))
       if (sr$sr[[1]] > 0.2) {
-        # high switch rate (30%, but will be nearer 0.296875)
-        clicks <- clicks %>%
-          mutate(train_type = c(kronecker(matrix(1, nrow(clicks), 1), 2)))
-        hovers <- hovers %>%
-          mutate(train_type = c(kronecker(matrix(1, nrow(hovers), 1), 2)))
+        train_type <- 2 # high switch rate (30%, but will be nearer 0.296875)
       } else {
-        # low switch rate
-        clicks <- clicks %>%
-          mutate(train_type = c(kronecker(matrix(1, nrow(clicks), 1), 1)))
-        hovers <- hovers %>%
-          mutate(train_type = c(kronecker(matrix(1, nrow(hovers), 1), 1)))
+        train_type <- 1 # low switch rate
       }
-    } else {
-      # use the switch rate we calculated from their training data
-      clicks <- clicks %>%
-        mutate(train_type = c(kronecker(matrix(1, nrow(clicks), 1), train_type$train_type[[1]])))
-      hovers <- hovers %>%
-        mutate(train_type = c(kronecker(matrix(1, nrow(hovers), 1), train_type$train_type[[1]])))
+    }
+    clicks <- clicks %>%
+      mutate(train_type = c(kronecker(matrix(1, nrow(clicks), 1), train_type)))
+    hovers <- hovers %>%
+      mutate(train_type = c(kronecker(matrix(1, nrow(hovers), 1), train_type)))
+    
+    
+    if (ses == "ses-test" && exp == "exp_lt"){
+      # context 1 at test is always a fully transferred context. if it matches train phase context 1, flag that
+      full_transfer <- clicks %>% filter(context==1,door_cc==1) %>% select(door) %>% unique() %>% pull()
+      if(all(sort(unlist(full_transfer))==sort(unlist(context_one_doors)))){
+        clicks <- clicks %>% 
+          mutate(train_context_transferred = case_when(context==1 ~ 1, .default=NA))
+        hovers <- hovers %>% 
+          mutate(train_context_transferred = case_when(context==1 ~ 1, .default=NA))
+      }else{
+        # if the full-transfer context at test doesn't match train phase context 1, we know it must match context 2
+        clicks <- clicks %>% 
+          mutate(train_context_transferred = case_when(context==1 ~ 2, .default=NA))
+        hovers <- hovers %>% 
+          mutate(train_context_transferred = case_when(context==1 ~ 1, .default=NA))
+      }
+    }else{
+      clicks <- clicks %>% 
+        mutate(train_context_transferred = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
+      hovers <- hovers %>% 
+        mutate(train_context_transferred = c(kronecker(matrix(1, nrow(hovers), 1), NA)))
     }
 
     return(list(clicks, hovers))

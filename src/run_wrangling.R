@@ -1,9 +1,6 @@
 # lydia barnes, march 2024 this script extracts, formats, and summarises data from the 'doors'
 # project.
 
-# TODO: remove redundancy bw door_correct and door_cc produce alternate results grouped by door
-# identity instead of nclicks
-
 ### sources
 library(tidyverse)
 source(file.path(getwd(), "src", "get_subs.R"))
@@ -53,23 +50,30 @@ subs <- get_subs(exp, version)
 # make an empty data frame with all the variables (columns) that we will want
 grp_data <- data.frame(
   sub = integer(), ses = integer(), t = integer(), context = integer(), door = integer(),
-  door_correct = integer(), on = numeric(), off = numeric(), subses = integer(), door_cc = integer(),
-  door_oc = integer(), switch = integer(), train_type = integer()
+  door_cc = integer(), on = numeric(), off = numeric(), subses = integer(), door_oc = integer(), 
+  switch = integer(), train_type = integer(), train_context_transferred = integer()
 )
 
 # for each subject and session, use the function 'get_data' to load their raw data and attach it to
 # our 'grp_data' data frame with one measurement (row) per event (click or hover)
 for (sub in subs) {
+  sid <- as.numeric(substring(sub,5,7))
   for (ses in sess) {
     train_type <- NA
+    context_one_doors <- NA
     if (ses == "ses-test") {
-      # we calculate people's training group from the switch rate in their train phase data.
-      # copy that information into the test phase data
       train_type <- grp_data %>%
-        filter(sub == sub & ses == 2) %>%
-        select(train_type)
+        filter(sub == sid, ses == 2) %>%
+        select(train_type) %>% 
+        unique() %>% 
+        pull()
+      context_one_doors <- grp_data %>% 
+        filter(sub==sid,ses==ses,context==1,door_cc==1) %>% 
+        select(door) %>% 
+        unique() %>% 
+        pull()
     }
-    data <- get_data(data_path, exp, sub, ses, train_type, apply_threshold, min_dur) # load and format raw data
+    data <- get_data(data_path, exp, sub, ses, train_type, context_one_doors, apply_threshold, min_dur) # load and format raw data
     grp_data <- rbind(grp_data, data[[idx]]) # add to the 'grp_data' data frame so we end up with all subjects and sessions in one spreadsheet
   }
 }
@@ -82,14 +86,14 @@ write_csv(grp_data, fnl)
 
 # by trial
 res <- grp_data %>%
-  group_by(sub, ses, t, context, train_type) %>%
+  group_by(sub, ses, t, context, train_type, train_context_transferred) %>%
   summarise(
-    switch = max(switch), n_clicks = n(), n_correct = sum(door_correct), n_cc = sum(door_cc),
-    n_oc = sum(door_oc), accuracy = n_correct / n_clicks,
+    switch = max(switch), n_clicks = n(), n_cc = sum(door_cc), n_oc = sum(door_oc), 
+    accuracy = n_cc / n_clicks,
   )
 rt <- grp_data %>%
-  group_by(sub, ses, t, context, train_type) %>%
-  filter(door_correct == 1) %>%
+  group_by(sub, ses, t, context, train_type, train_context_transferred) %>%
+  filter(door_cc == 1) %>%
   summarise(rt = min(off)) # time to first correct click offset
 res$rt <- rt$rt
 fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "trl", sep = "_"), ".csv", sep = ""))
@@ -97,7 +101,7 @@ write_csv(res, fnl)
 
 # by subject
 res <- res %>%
-  group_by(sub, ses, context, switch, train_type) %>%
-  summarise(n_clicks = mean(n_clicks), n_cc = mean(n_cc), n_oc = mean(n_oc), rt = mean(rt), accuracy = mean(accuracy))
+  group_by(sub, ses, context, switch, train_type, train_context_transferred) %>% 
+  summarise_all(mean)
 fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "avg", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)
