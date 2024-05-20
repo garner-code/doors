@@ -11,8 +11,6 @@ exp <-
 mes <-
   "clicks" # measure: 'clicks' or 'hovers'. usually want 'clicks'.
 
-ctx <- 1
-
 # figure settings
 title_sz <- 30
 label_sz <- 30
@@ -38,6 +36,40 @@ fnl <-
     sep = ""
   ))
 avg <- read_csv(fnl)
+
+# add test phase accuracy to stereo data frame
+stereo_test <-
+  stereo %>%
+  group_by(sub, ses, context) %>%
+  summarise_all(mean)
+stereo_test$accuracy_test <-
+  avg %>%
+  filter(ses == 3, switch == 0) %>%
+  pull(accuracy) # add test accuracy to stereo results
+stereo_test$context_test <- 
+  avg %>% 
+  filter(ses==3, switch==0) %>% 
+  pull(context)
+tmp <- stereo_test %>% 
+  group_by(sub,ses) %>% 
+  summarise_all(mean)
+reclicks_avg <- tmp %>% pull(reclicks)
+overshoot_avg <- tmp %>% pull(overshoot_tsp)
+a <- stereo_test %>%
+  filter(ses == 2,context_test==1) %>%
+  ungroup() %>% 
+  select(sub,overshoot_tsp,reclicks,accuracy_test,context_test)
+a$reclicks <- reclicks_avg
+a$overshoot_tsp <- overshoot_avg
+b <- stereo_test %>% 
+  filter(ses==2, context_test==2) %>% 
+  ungroup() %>% 
+  select(sub,overshoot_tsp,reclicks,accuracy_test,context_test)
+b$reclicks <- reclicks_avg
+b$overshoot_tsp <- overshoot_avg
+stereo_test <- bind_rows(a,b)
+
+test_labels <- c("Full Transfer Accuracy", "Partial Transfer Accuracy")
 
 for (ctx in 1:2) {
   ### transitions
@@ -95,88 +127,79 @@ for (ctx in 1:2) {
       ".png",
       sep = ""
     ))
-  ggsave(fnl, plot = p)
+  ggsave(fnl, plot = p, width = 14, height = 7)
+}
 
-  ### re-clicks
-  p <- stereo %>%
-    filter(ses == 2, context == ctx) %>%
+
+#===============================================================================
+# analyse by test phase context (1 = full transfer, 2 = partial transfer)
+
+# reclicks
+p <- stereo_test %>%
+  ggplot() +
+  geom_point(
+    aes(
+      x = reclicks,
+      y = accuracy_test,
+      colour = factor(context_test)
+    ),
+    alpha = 0.8,
+    size = 15
+  ) +
+  geom_text(
+    aes(
+      x = reclicks,
+      y = accuracy_test, 
+      label = sub
+    ),
+    alpha = 0.8,
+    size = 8,
+    position = position_jitter(width = 0.1, height = 0.05)
+  ) +
+  theme_minimal(base_size = label_sz, base_family = "Roboto") +
+  ylim(0.5, 1.1) +
+  xlim(0, 8.5) +
+  labs(
+    title = "Transfer Accuracy by Train Re-Clicks",
+    x = "Re-Clicks",
+    y = "Accuracy",
+    colour = "Test Type"
+  ) +
+  scale_colour_brewer(
+    palette = "Greens",
+    labels = c("Full Transfer","Partial Transfer")
+  ) +
+  theme(
+    panel.background = element_rect(fill = "white", colour = "white"),
+    plot.background = element_rect(fill = "white", colour = "white")
+  )
+  
+fnl <-
+  file.path(project_path, "fig", paste(
+    paste(
+      version,
+      exp,
+      mes,
+      "reclicks",
+      sep = "_"
+    ),
+    ".png",
+    sep = ""
+  ))
+ggsave(fnl, plot = p, width = 14, height = 7)
+
+  
+# shortest path overshoot
+  p <- stereo_test %>%
     ggplot() +
-    geom_point(
-      aes(
-        x = reclicks,
-        y = accuracy,
-        colour = factor(subses)
-      ),
+    geom_point(aes(x = overshoot_tsp, y = accuracy_test,
+                   colour = factor(context_test)),
       alpha = 0.8,
       size = 15
     ) +
     geom_text(
       aes(
-        x = reclicks,
-        y = accuracy, label = sub
-      ),
-      alpha = 0.8,
-      size = 8,
-      position = position_jitter(width = 0.1, height = 0.05)
-    ) +
-    theme_minimal(base_size = label_sz, base_family = "Roboto") +
-    ylim(0, 1.1) +
-    xlim(0, 8.5) +
-    labs(
-      title = "Switch trial re-clicks by stay trial accuracy",
-      x = "Re-clicks",
-      y = "Accuracy",
-      colour = "Half of session"
-    ) +
-    scale_colour_brewer(
-      palette = "Greens",
-      labels = unique(stereo$subses)
-    ) +
-    theme(
-      panel.background = element_rect(fill = "white", colour = "white"),
-      plot.background = element_rect(fill = "white", colour = "white")
-    )
-
-  fnl <-
-    file.path(project_path, "fig", paste(
-      paste(
-        version,
-        exp,
-        mes,
-        "reclicks",
-        paste("context",
-          ctx,
-          sep = "-"
-        ),
-        sep = "_"
-      ),
-      ".png",
-      sep = ""
-    ))
-  ggsave(fnl, plot = p)
-
-  ### shortest path-i-ness
-  # add test phase accuracy to stereo data frame
-  stereo_avg <-
-    stereo %>%
-    group_by(sub, ses, context) %>%
-    summarise_all(mean)
-  stereo_avg$accuracy_test <-
-    avg %>%
-    filter(ses == 3, switch == 0) %>%
-    pull(accuracy) # add test accuracy to stereo results
-
-  # plot overshoot against subsequent performance
-  p <- stereo_avg %>%
-    filter(ses == 2, context == ctx) %>%
-    ggplot() +
-    geom_point(aes(x = overshoot_hp, y = accuracy_test),
-      alpha = 0.8,
-      size = 15
-    ) +
-    geom_text(
-      aes(
-        x = overshoot_hp,
+        x = overshoot_tsp,
         y = accuracy_test, label = sub
       ),
       alpha = 0.8,
@@ -184,11 +207,15 @@ for (ctx in 1:2) {
       position = position_jitter(width = 0.1, height = 0.05)
     ) +
     theme_minimal(base_size = label_sz, base_family = "Roboto") +
-    ylim(0, 1.1) +
+    ylim(0.5, 1.1) +
     xlim(-0.1, 2.1) +
     labs(
-      title = "Path overshoot (train) by accuracy (test)",
-      x = "Path overshoot", y = "Accuracy"
+      title = "Train Overshoot by Test Accuracy",
+      x = "Path Overshoot", y = "Accuracy", colour = "Test Type"
+    ) +
+    scale_colour_brewer(
+      palette = "Greens",
+      labels = c("Full Transfer","Partial Transfer")
     ) +
     theme(
       panel.background = element_rect(fill = "white", colour = "white"),
@@ -197,11 +224,8 @@ for (ctx in 1:2) {
 
   fnl <-
     file.path(project_path, "fig", paste(paste(
-      version, exp, mes, "hp", paste("context",
-        ctx,
-        sep = "-"
-      ),
+      version, exp, mes, "tsp",
       sep = "_"
     ), ".png", sep = ""))
-  ggsave(fnl, plot = p)
-}
+  ggsave(fnl, plot = p, width = 14, height = 7)
+  

@@ -12,6 +12,7 @@
 ### sources
 library(tidyverse)
 library(tidyjson)
+source(file.path(getwd(), "src", "get_subs.R"))
 
 #=========================================================================================================
 # settings (data)
@@ -119,7 +120,7 @@ for (sub in subs){
             labels = c(tidx, "")
           ) +
           labs(
-            title = "Optimal and Observed Paths During Training", x = "Door Position (x)",
+            title = "Observed and Optimal Paths", x = "Door Position (x)",
             y = "Door Position (y)", colour = "Trial"
           ) +
           theme(
