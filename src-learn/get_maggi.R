@@ -1,5 +1,7 @@
 get_maggi <- function(data,alpha=1,beta=1,decay=.9){
- 
+  # mode: (alphas-1) / (alphas+betas-2)
+  # mean: alphas / (alphas+betas)
+
   # initialise empty arrays
   alphas <- rep(0,length(data))
   betas <- alphas
@@ -23,9 +25,9 @@ get_maggi <- function(data,alpha=1,beta=1,decay=.9){
     betas[i] <- beta+f[i]
   }
 
-  beta_mean <- alphas / (alphas+betas)
+  beta_map <- (alphas-1) / (alphas+betas-2) # maximum a posteriori probability i.e. the mode
   beta_variance <- alphas*betas / ((alphas+betas)^2 * (alphas+betas+1))
   
-  return(list(alphas,betas,beta_mean,beta_variance))
+  return(list(alphas,betas,beta_map,beta_variance))
 
 }
