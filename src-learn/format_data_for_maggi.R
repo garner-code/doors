@@ -1,4 +1,4 @@
-format_data_for_maggi <- function(nsub=1,nses=1,ncontext=1,specific_doors=FALSE){
+format_data_for_maggi <- function(nsub=1,nses=1,ncontext=1,method="by_event",specific_doors=FALSE,competitive=FALSE,evaluate_all=FALSE){
 
 # lydia barnes, may 2024
 # reads event data from doors task
@@ -12,110 +12,167 @@ library(tidyverse)
 events <- read.csv('res/study-01_exp_lt_clicks_evt.csv')
 events <- events %>% filter(sub==nsub, ses==nses, context==ncontext)
 
-# find the point in each trial where they made their first mistake
-first_errors <- rep(0,1,max(unique(events$t)))
-for (i in unique(events$t)){
-  tdata <- events %>% filter(t==i)
-  try(first_errors[i] <- min(which(diff(tdata$door_cc)==-1)), silent = TRUE)
-}
-ttrials <- unique(events$t)
-
-# find the first trial in which each door is the target (i.e. people's first opportunity to learn)
+# find the first time each door is the target (their first opportunity to learn)
 doors <- events %>% filter(door_cc==1) %>% pull(door) %>% unique()
 target_idx <- c(which(diff(events$t)==1),length(events$door))
 targets <- events$door[target_idx]
 first_feedback <- rep(0,1,length(doors))
+first_feedback_trial <- first_feedback
 for (i in 1:length(doors)){
-  first_feedback[i] <- events$t[target_idx[min(which(targets==doors[i]))]]
+  first_feedback[i] <- target_idx[min(which(targets==doors[i]))]
+  first_feedback_trial[i] <- events$t[first_feedback[i]]
 }
 
-# exclude trials w <4 clicks on which all doors were context-relevant
-uninformative <- events %>% group_by(t) %>% summarise(clicks = n(),accuracy = mean(door_cc)) %>% 
-  mutate(exclude = case_when((accuracy==1 & clicks<4) ~ t,.default=0)) %>% filter(exclude!=0) %>% pull(exclude)
-events_include <- events %>% filter(!(t %in% uninformative))
 
-# preallocate arrays
-trials <- unique(events_include$t)
-ntrials <- length(trials)
-nstrategies <- 4
-learn_doors <- matrix(0,nstrategies,ntrials)
+# -------------------------------------------------------------------------
+# analyse by event
 
-# for remaining trials, 
-for (i in 1:ntrials){
-  trial <- trials[i]
-  tdata <- events_include %>% filter(t==trial)
+if(method=="by_event"){
+  know_doors <- matrix(0,4,nrow(events))
+  for (i in 1:nrow(events)){
+    j <- 3
+    these_doors <- NA
+    while (1){
+      if(j>=i){break}
+      pdata <- events[(i-j):i,]
+      these_doors <- unique(pdata$door)
+      j <- j+1
+      if(length(these_doors)>=4){break}
+    }
+    correct <- which(!is.na(match(these_doors,doors)))
+
+    if(!is_empty(correct)){
+      
+      # check that they've had a chance to learn about this door. otherwise, we don't trust that they know it's relevant.
+      keep <- correct
+      for (c in 1:length(correct)){
+        if(first_feedback[correct[c]]>i){
+          keep <- keep[-c]
+        }
+      }
+      correct <- keep
+      
+      # confirm that there is still something in "correct", and carry on
+      if(!is_empty(correct)){
+        
+        # record evidence for one or more strategies
+        if(competitive){
+          know_doors[length(correct),i] <- 1
+        }else{
+          know_doors[1:length(correct),i] <- 1
+        }
+        
+      }
+
+    }
+  } 
   
-  # if they haven't had a chance to experience a door as a target, treat it as context-irrelevant
-  if((nses==1) &(trial < max(first_feedback))){
-    chance_doors <- doors[which(first_feedback>=trial)]
-    tdata <- tdata %>% mutate(door_cc = case_when(door %in% chance_doors ~ 0, .default=door_cc))
+  samples <- 1:nrow(events)
+}
+
+
+# -------------------------------------------------------------------------
+# analyse by trial
+
+if(method=="by_trial"){
+  # find the point in each trial where they made their first mistake
+  first_errors <- rep(0,1,max(unique(events$t)))
+  for (i in unique(events$t)){
+    tdata <- events %>% filter(t==i)
+    try(if(tdata$door_cc[1]==0){first_errors[i] <- 1}else{first_errors[i] <- min(which(diff(tdata$door_cc)==-1))}, silent = TRUE)
   }
   
-  # if the first door clicked is context-irrelevant, count that as evidence against learning
-  if(tdata$door_cc[1]==0){
-    learn_doors[,i] <- 0
-  }else{
+  # preallocate arrays
+  trials <- unique(events$t)
+  ntrials <- length(trials)
+  nstrategies <- 4
+  know_doors <- matrix(0,nstrategies,ntrials)
+  # search through each trial for evidence that they know doors
+  for (i in 1:ntrials){
     
-    # if we couldn't find their first mistake, they've learned all four doors
-    if(is.infinite(first_errors[trial])){
-      learn_doors[,i] <- 1 
+    trial <- trials[i]
+    tdata <- events %>% filter(t==trial)
+    missing_evidence <- FALSE
+    
+    # if they haven't had a chance to experience a door as a target, treat it as context-irrelevant
+    if((nses==1) &(trial < max(first_feedback_trial))){
+      chance_doors <- doors[which(first_feedback_trial>=trial)]
+      tdata <- tdata %>% mutate(door_cc = case_when(door %in% chance_doors ~ 0, .default=door_cc))
+    }
+    
+    # if the first door clicked is context-irrelevant, count that as evidence against them knowing any doors
+    if(tdata$door_cc[1]==0){
+      know_doors[,i] <- 0
       
-    # if we've found their first mistake, look at the correct doors they found before the mistake
     }else{
-      these_doors <- unique(tdata$door[1:first_errors[trial]])
+      # find out what doors they clicked
+      # if we couldn't find their first mistake, they only clicked correct doors
+      if(is.infinite(first_errors[trial])){
+        these_doors <- unique(tdata$door)
+        if(length(these_doors)<4){
+          missing_evidence <- TRUE #they may have known more than the clicked doors; we can't evaluate that
+        }
+        
+      # if we've found their first mistake, find the correct doors they found before the mistake
+      }else{
+        these_doors <- unique(tdata$door[1:first_errors[trial]])
+      }
       
+      # apply criteria for whether a door click counts as knowing that door
       # if we're requiring that they prioritise the same subset of doors before we consider clicks deliberate,
       if(specific_doors){
-        
         door_idx <- match(these_doors,doors)
-        learn_doors[door_idx,i] <- 1
+        know_doors[door_idx,i] <- 1
         
-      # if we're allowing that people may click different subsets of doors, but must be consistent with the previous trial,
+        # if we're allowing that people may click different subsets of doors, but must be consistent with the previous trial,
       }else{
-        if(i==1){
-          learn_doors[,i] <- 0
-        }else{
+        if(i>1){
           # find out what doors they selected on the previous trial
-          idx <- which(ttrials==trial)
-          those_doors <- events %>% filter(t==ttrials[idx-1]) %>% pull(door) %>% unique()
-          
-          # if there are errors on the previous trial, take the doors before the error
-          if(!is.infinite(first_errors[trials[i-1]])){
-            those_doors <- unique(those_doors[1:first_errors[trials[i-1]]])
-          }
-          
-          # if any correct doors were prioritised on both trials, count that as evidence of learning however many doors 
+          those_doors <- events %>% filter(t==trials[i-1]) %>% pull(door) %>% unique()
+
+          # if any correct doors were prioritised on both trials, count that as evidence of knowing however many doors 
           # have stayed the same
           if(any(!is.na(match(these_doors,those_doors)))){
-            learn_doors[1:length(which(!is.na(match(these_doors,those_doors)))),i] <- 1
+            if(competitive){
+              know_doors[length(which(!is.na(match(these_doors,those_doors)))),i] <- 1
+            }else{
+              know_doors[1:length(which(!is.na(match(these_doors,those_doors)))),i] <- 1
+            }
+            
+            if(missing_evidence & !evaluate_all){
+              know_doors[(length(which(!is.na(match(these_doors,those_doors))))+1):nstrategies,i] <- NA
+            }
           }
         }
       }
+      
     }
   }
-}
-
-# if we're requiring that they continuing selecting e.g. door 11 as their learn_one door, 
-if(specific_doors){
-  # find the order in which they first selected the doors
-  first_selection <- rep(0,nstrategies)
-  for (i in 1:nstrategies){
-    first_selection[i] <- min(which(learn_doors[i,]==1))
-  }
-  # exclude trials on which previously-selected doors aren't among those selected
-  for (i in 1:ntrials){
-    for (j in 1:nstrategies){
-      if(trials[i]>first_selection[j] & learn_doors[j,i]==0){
-        learn_doors[,i] <- 0
+  
+  # if we're requiring that they continuing selecting e.g. door 11 as their k1 door, 
+  if(specific_doors){
+    # find the order in which they first selected the doors
+    first_selection <- rep(0,nstrategies)
+    for (i in 1:nstrategies){
+      first_selection[i] <- min(which(know_doors[i,]==1))
+    }
+    # exclude trials on which previously-selected doors aren't among those selected
+    for (i in 1:ntrials){
+      for (j in 1:nstrategies){
+        if(trials[i]>first_selection[j] & know_doors[j,i]==0){
+          know_doors[,i] <- 0
+        }
       }
-    }
-  }  
-  # sort by which doors were selected first
-  learn_doors <- learn_doors[order(first_selection),]
+    }  
+    # sort by which doors were selected first
+    know_doors <- know_doors[order(first_selection),]
+  }
+ 
+  samples <- trials 
 }
 
 # format
-strategies <- data.frame(trials,learn_one=learn_doors[1,],learn_two=learn_doors[2,],learn_three=learn_doors[3,],learn_four=learn_doors[4,])
+strategies <- data.frame(samples,k1=know_doors[1,],k2=know_doors[2,],k3=know_doors[3,],k4=know_doors[4,])
 return(strategies)
 
 }

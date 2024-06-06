@@ -10,19 +10,31 @@ get_maggi <- function(data,alpha=1,beta=1,decay=.9){
   
   for (i in 1:length(data)){
     
-    if(i==1){
-      # record success and failure
-      s[i] <- data[i] 
-      f[i] <- 1-data[i] 
+    if(is.na(data[i])){
+      if(i==1){
+        alphas[i] <- alpha
+        betas[i] <- beta
+      }else{
+        alphas[i] <- alphas[i-1]
+        betas[i] <- betas[i-1]
+      }
+      
     }else{
-      # record success and failure, modified by success and failure at our last check
-      s[i] <- decay*s[i-1] + data[i]
-      f[i] <- decay*f[i-1] + 1-data[i]
+      if(i==1){
+        # record success and failure
+        s[i] <- data[i] 
+        f[i] <- 1-data[i] 
+      }else{
+        # record success and failure, modified by success and failure at our last check
+        s[i] <- decay*s[i-1] + data[i]
+        f[i] <- decay*f[i-1] + 1-data[i]
+      }
+      
+      # update the distribution's parameters
+      alphas[i] <- alpha+s[i]
+      betas[i] <- beta+f[i]
     }
-    
-    # update the distribution's parameters
-    alphas[i] <- alpha+s[i]
-    betas[i] <- beta+f[i]
+
   }
 
   beta_map <- (alphas-1) / (alphas+betas-2) # maximum a posteriori probability i.e. the mode
