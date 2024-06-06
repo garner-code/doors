@@ -73,7 +73,9 @@ get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, ap
         resps_1$t <- resps_1$t - 5 # adjust the trial counter for house-1, now that practice trials are gone
         resps_2$t <- resps_2$t + resps_1$t[nrow(resps_1)]
         resps_3$t <- resps_3$t + resps_2$t[nrow(resps_2)]
+
         resps <- rbind(resps_1, resps_2, resps_3)
+        resps$learn_phase <- c(rep(0,nrow(resps_1)),rep(0,nrow(resps_2)),rep(1,nrow(resps_3)))
       }
     }
     resps <- resps %>%

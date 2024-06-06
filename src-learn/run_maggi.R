@@ -15,8 +15,8 @@ if (simulation){
   data <- unlist(lapply(ps, rbinom, n=n, size=1)) # n * length(ps) trials drawn from a binomial distribution
 }else{
   # read real data
-  strategies <- format_data_for_maggi(nsub=2,nses=1,ncontext=2,specific_doors=FALSE)
-  data <- strategies %>% pull(learn_one)
+  strategies <- format_data_for_maggi(nsub=2,nses=1,ncontext=1,specific_doors=FALSE)
+  data <- strategies %>% pull(learn_four)
 }
 
 # calculate recency-weighted probability of finding strategy s
@@ -27,5 +27,5 @@ increments <- seq(0,1,by=.01)
 plot(increments,dbeta(increments,alphas[length(data)],betas[length(data)]),type="l",col="darkgreen") 
 
 # view alphas and betas over time
-plot(1:length(data),alphas,type="l",col="darkgreen",ylim=c(0,10))
-points(1:length(data),betas,type="l",col="navy")
+plot(1:length(data),beta_map,type="l",col="darkgreen")
+#points(1:length(data),betas,type="l",col="navy")
