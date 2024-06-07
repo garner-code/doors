@@ -72,6 +72,56 @@ stereo_test <- bind_rows(a,b)
 test_labels <- c("Full Transfer Accuracy", "Partial Transfer Accuracy")
 
 for (ctx in 1:2) {
+  p <- stereo %>% filter(ses == 2, context == ctx) %>% 
+    ggplot() +
+    geom_point(
+      aes(
+        x = transition_counts,
+        y = reclicks,
+        colour = accuracy
+      ),
+      alpha = 0.8,
+      size = 15
+    ) +
+    geom_text(
+      aes(
+        x = transition_counts,
+        y = reclicks, 
+        label = sub
+      ),
+      alpha = 0.8,
+      size = 8,
+      position = position_jitter(width = 0.1, height = 0.05)
+    ) +
+    theme_minimal(base_size = label_sz, base_family = "Roboto") +
+    labs(
+      x = "Transitions",
+      y = "Reclicks",
+      colour = "Accuracy"
+    ) +
+    theme(
+      panel.background = element_rect(fill = "white", colour = "white"),
+      plot.background = element_rect(fill = "white", colour = "white")
+    )
+  fnl <-
+    file.path(project_path, "fig", paste(
+      paste(
+        version,
+        exp,
+        mes,
+        "stereo",
+        paste("context",
+              ctx,
+              sep = "-"
+        ),
+        sep = "_"
+      ),
+      ".png",
+      sep = ""
+    ))
+  ggsave(fnl, plot = p, width = 14, height = 14)
+  
+  
   ### transitions
   p <- stereo %>%
     filter(ses == 2, context == ctx) %>%
@@ -80,7 +130,7 @@ for (ctx in 1:2) {
       aes(
         x = transition_counts,
         y = accuracy,
-        colour = factor(subses)
+        colour = factor(subses),
       ),
       alpha = 0.8,
       size = 15
@@ -96,9 +146,9 @@ for (ctx in 1:2) {
     ) +
     theme_minimal(base_size = label_sz, base_family = "Roboto") +
     ylim(0, 1.1) +
-    xlim(0.5, 4.5) +
+    #xlim(0.5, 4.5) +
     labs(
-      title = "Transitions by accuracy during training",
+      title = "Transitions by accuracy",
       x = "Transitions",
       y = "Accuracy",
       colour = "Half of session"

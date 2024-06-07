@@ -17,7 +17,7 @@ if (simulation){
   
 }else{
   # read real data
-  strategies <- format_data_for_maggi(nsub=1,nses=1,ncontext=1,method="by_trial",specific_doors=FALSE,competitive=FALSE,evaluate_all=FALSE)
+  strategies <- format_data_for_maggi(nsub=1,nses=1,ncontext=1,method="by_event",specific_doors=FALSE,competitive=TRUE,evaluate_all=FALSE)
   
   colours <- c("darkgreen","limegreen","gold","orange")
   plot(1:nrow(strategies),rep(0,1,nrow(strategies)),type="l",col="black",ylim=c(0,1))

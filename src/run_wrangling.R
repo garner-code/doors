@@ -12,8 +12,8 @@ source(file.path(getwd(), "src", "get_data.R"))
 # !you will want to update these settings a lot during piloting, when the task code or the way you
 # test changes, or when you test participants on different subsets of the task phases
 version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
-exp <- "exp_ts" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
-sess <- c("ses-learn") # session: 'ses-learn','ses-train','ses-test'. can select one (e.g. ses <- c('ses-learn')) or multiple (e.g. ses <- c('ses-train','ses-test'))
+exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
+sess <- c("ses-learn","ses-train","ses-test") # session: 'ses-learn','ses-train','ses-test'. can select one (e.g. ses <- c('ses-learn')) or multiple (e.g. ses <- c('ses-train','ses-test'))
 
 # !you can change the following settings if you want to, but the defaults will usually be fine
 mes <- "clicks" # measure: 'clicks' or 'hovers'. usually want 'clicks'.
@@ -49,7 +49,7 @@ subs <- get_subs(exp, version)
 
 # make an empty data frame with all the variables (columns) that we will want
 grp_data <- data.frame(
-  sub = integer(), ses = integer(), t = integer(), context = integer(), door = integer(), learn_phase = integer(),
+  sub = integer(), ses = integer(), t = integer(), context = integer(), door = integer(),
   door_cc = integer(), on = numeric(), off = numeric(), subses = integer(), door_oc = integer(), 
   switch = integer(), train_type = integer(), train_context_transferred = integer()
 )
@@ -57,6 +57,8 @@ grp_data <- data.frame(
 # for each subject and session, use the function 'get_data' to load their raw data and attach it to
 # our 'grp_data' data frame with one measurement (row) per event (click or hover)
 for (sub in subs) {
+  print(sub)
+  
   sid <- as.numeric(substring(sub,5,7))
   for (ses in sess) {
     train_type <- NA
@@ -86,13 +88,13 @@ write_csv(grp_data, fnl)
 
 # by trial
 res <- grp_data %>%
-  group_by(sub, ses, t, context, learn_phase, train_type, train_context_transferred) %>%
+  group_by(sub, ses, t, context, train_type, train_context_transferred) %>%
   summarise(
     switch = max(switch), n_clicks = n(), n_cc = sum(door_cc), n_oc = sum(door_oc), 
     accuracy = n_cc / n_clicks,
   )
 rt <- grp_data %>%
-  group_by(sub, ses, t, context, learn_phase, train_type, train_context_transferred) %>%
+  group_by(sub, ses, t, context, train_type, train_context_transferred) %>%
   filter(door_cc == 1) %>%
   summarise(rt = min(off)) # time to first correct click offset
 res$rt <- rt$rt
@@ -105,7 +107,7 @@ write_csv(res, fnl)
 
 # by subject
 res <- res %>%
-  group_by(sub, ses, context, learn_phase, switch, train_type, train_context_transferred) %>% 
+  group_by(sub, ses, context, switch, train_type, train_context_transferred) %>% 
   summarise_all(mean)
 fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "avg", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)

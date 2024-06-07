@@ -48,7 +48,12 @@ doors <- data.frame(xloc, yloc, id, count)
 observed <- observed %>%
   mutate(x = xloc[door], y = yloc[door])
 
-#=========================================================================================================
+
+# assign path colours for context
+context_colour <- c("cornflowerblue","seagreen3")
+
+# -------------------------------------------------------------------------
+# plot
 
 for (sub in subs){
   sid <- as.numeric(substring(sub,5,7))
@@ -62,17 +67,9 @@ for (sub in subs){
           mutate(solution_factor = factor(solution))
         obs <- observed %>%
           filter(sub == sid, ses == ss, context == ctx, switch == 0)
-        
-        # reduce to just the available four-click trials
-        replicates <- rle(obs$t)
-        obs <- obs %>% 
-          filter(t %in% replicates$values[replicates$lengths>3])
+
         trials <- unique(obs$t)
-        
-        # select a set of trials that are spread across this session
-        tidx <- round(seq.int(1,length(unique(obs$t)),length.out=5))
-        obs <- obs %>%
-          filter(t %in% trials[tidx]) %>%
+        obs <- obs %>% 
           mutate(t_factor = factor(t))
         
         # set grid colours based on current and other context
@@ -90,7 +87,7 @@ for (sub in subs){
         ggplot() +
           geom_tile(
             data = doors, aes(x = xloc, y = yloc, fill = id, colour = "white"), show.legend = FALSE,
-            width = 0.9, height = 0.9, alpha = 1
+            width = 0.9, height = 0.9, alpha = 1, col = "black"
           ) +
           geom_text(
             data = doors, aes(x = xloc, y = yloc, label = id),
@@ -104,9 +101,9 @@ for (sub in subs){
             )
           ) +
           geom_path(
-            data = obs, aes(x = x, y = y, group = t_factor, colour = t_factor),
+            data = obs, aes(x = x, y = y, group = t_factor),
             linewidth = 2, linejoin = "mitre", lineend = "butt", position = position_jitter(width = 0.1, height = 0.1),
-            alpha = 0.8, arrow = arrow(angle = 15, type = "closed")
+            alpha = 0.1, arrow = arrow(angle = 15, type = "closed"), col = context_colour[ctx]
           ) +
           theme_minimal() +
           ylim(0.5, 4.5) +
@@ -115,10 +112,6 @@ for (sub in subs){
             4.5
           ) +
           scale_fill_gradientn(colours = colours, guide = "none") +
-          scale_colour_brewer(
-            palette = "BrBG",
-            labels = c(tidx, "")
-          ) +
           labs(
             title = "Observed and Optimal Paths", x = "Door Position (x)",
             y = "Door Position (y)", colour = "Trial"
@@ -130,7 +123,7 @@ for (sub in subs){
           )
         
         # save it
-        fnl <- file.path(project_path, "fig", paste(paste(version, exp, names(sess[sess==ss]), mes, alg, "opt-path", sub, 
+        fnl <- file.path(project_path, "fig", paste(paste(version, exp, names(sess[sess==ss]), mes, alg, sub, 
           paste("context", ctx,
           sep = "-"
         ), sep = "_"), ".png", sep = ""))

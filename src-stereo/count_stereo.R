@@ -16,10 +16,11 @@ count_stereo <- function(data, opt, graph) {
     filter(switch == 0)
   accuracy <- events %>%
     group_by(sub, ses, t, context, subses) %>%
-    summarise(n_clicks = n(), n_correct = sum(door_cc), accuracy = n_correct / n_clicks)
+    summarise(n_clicks = n(), n_correct = sum(door_cc), n_correct_oc = sum(door_oc), 
+              accuracy = n_correct / n_clicks, metatask_accuracy = (n_correct+n_correct_oc)/n_clicks)
   accuracy <- accuracy %>%
     group_by(sub, ses, context, subses) %>%
-    summarise(accuracy = mean(accuracy))
+    summarise(accuracy = mean(accuracy), metatask_accuracy = mean(metatask_accuracy))
 
   ### consistent in transitions?
   transitions <- data.frame(
@@ -45,11 +46,23 @@ count_stereo <- function(data, opt, graph) {
               for (i in 2:nrow(trial)) {
                 door <- trial$door[i]
                 previous <- trial$door[i - 1]
-                transition_counts[previous, door] <- 1 # yes, this transition happened
+                transition_counts[previous, door] <- 1 #transition_counts[previous,door]+1 # yes, this transition happened
               }
             }
           }
+          
+          # take the mean of the transitions for those preceding doors
           transition_counts <- colSums(transition_counts)
+          
+          #x <- rep(0,1,ncol(transition_counts))
+          #for(i in 1:ncol(transition_counts)){
+          #  if(sum(transition_counts[,i])>0){
+          #    x[i] <- mean(transition_counts[(transition_counts[,i] != 0),i])
+          #  }
+          #}
+          #transition_counts <- x
+
+          # and the mean across receiving doors
           transition_counts <- mean(transition_counts[transition_counts != 0])
 
           if (!is.nan(transition_counts)) {
@@ -105,7 +118,7 @@ count_stereo <- function(data, opt, graph) {
     summarise_all(mean) %>% select(!t)
   t <- transitions_accuracy %>%
     ungroup() %>%
-    select(accuracy, transition_counts)
+    select(accuracy, metatask_accuracy, transition_counts)
   r <- reclicks %>%
     ungroup() %>%
     select(clicks, reclicks)

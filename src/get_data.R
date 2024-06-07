@@ -75,7 +75,7 @@ get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, ap
         resps_3$t <- resps_3$t + resps_2$t[nrow(resps_2)]
 
         resps <- rbind(resps_1, resps_2, resps_3)
-        resps$learn_phase <- c(rep(0,nrow(resps_1)),rep(0,nrow(resps_2)),rep(1,nrow(resps_3)))
+        #resps$learn_phase <- c(rep(0,nrow(resps_1)),rep(0,nrow(resps_2)),rep(1,nrow(resps_3)))
       }
     }
     resps <- resps %>%

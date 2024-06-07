@@ -34,7 +34,7 @@ fnl <- file.path(data_path, paste(paste(version, exp, mes, "opt-path", sep = "_"
 opt <- read_csv(fnl, show_col_types = FALSE)
 
 # load graph of distances between doors
-fnl <- file.path(project_path, "src-paths", "graph.csv")
+fnl <- file.path(project_path, "src-stereo", "graph.csv")
 graph <- unname(data.matrix(read_csv(fnl, col_names = FALSE, show_col_types = FALSE)))
 
 #--------------------------------------------------------------------------------------------------
