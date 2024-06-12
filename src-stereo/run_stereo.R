@@ -1,10 +1,6 @@
 # lydia barnes, may 2024 counts, clusters, and/or traces stereotypical behaviour during training to
 # explain performance at test
 
-# TODO:
-# cluster participants based on stereotypy and accuracy
-# use maggi method to trace change in stereotypy (extent or type)
-
 #--------------------------------------------------------------------------------------------------
 # sources
 library(tidyverse)

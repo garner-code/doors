@@ -50,7 +50,7 @@ trial_list = trial_list['sub_infos']
 travelling_solutions = {}
 hamiltonian_solutions = {}
 context_names = ['A','B']
-for subject in range(0,np.shape(trial_list)[1]):
+for subject in range(0,np.shape(trial_list)[0]):
 
     these_travelling_solutions = {}
     these_hamiltonian_solutions = {}

@@ -81,6 +81,7 @@ def hamiltonian_path(graph,nodes,source_vertex):
     paths = np.asarray(paths)
     idx = np.where(np.round(distances,4) == np.round(min_distance,4))[0]
     paths = paths[idx,:]
-    distances = distances[idx,:]
+    distances = np.asarray(distances)
+    distances = list(distances[idx])
          
     return [paths,distances] 

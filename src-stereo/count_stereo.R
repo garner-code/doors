@@ -25,49 +25,54 @@ count_stereo <- function(data, opt, graph) {
   ### consistent in transitions?
   transitions <- data.frame(
     sub = integer(), ses = integer(), context = integer(), subses = integer(),
-    transition_counts = double()
+    transition_counts = double(), transition_weights = double()
   )
   for (su in unique(data$sub)) {
     for (se in unique(data$ses)) {
       for (co in unique(data$context)) {
         for (ss in unique(data$subses)) {
-          # select stay trials
+          
+          # reduce to correct click events on stay trials
           events <- data %>% filter(switch == 0, sub == su, ses == se, context == co, subses == ss, door_cc == 1)
 
-          # initialise a matrix
-          transition_counts <- matrix(0, nrow = 16, ncol = 16)
-
+          # -------------------------------------------------------------------------
+          # make the full transitions matrix
+          transition_matrix <- matrix(0, nrow = 16, ncol = 16)
+    
           # select a trial
           for (tr in unique(events$t)) {
             trial <- events %>% filter(t == tr)
-
-            # for all trials with more than one event, record door transitions
+            
+            # if there's more than one event, record door transitions
             if (nrow(trial) > 1) {
               for (i in 2:nrow(trial)) {
                 door <- trial$door[i]
                 previous <- trial$door[i - 1]
-                transition_counts[previous, door] <- 1 #transition_counts[previous,door]+1 # yes, this transition happened
+                transition_matrix[previous, door] <- transition_matrix[previous,door]+1 
               }
             }
           }
           
-          # take the mean of the transitions for those preceding doors
-          transition_counts <- colSums(transition_counts)
-          
-          #x <- rep(0,1,ncol(transition_counts))
-          #for(i in 1:ncol(transition_counts)){
-          #  if(sum(transition_counts[,i])>0){
-          #    x[i] <- mean(transition_counts[(transition_counts[,i] != 0),i])
-          #  }
-          #}
-          #transition_counts <- x
-
-          # and the mean across receiving doors
+          # -------------------------------------------------------------------------
+          # TRANSITION COUNTS
+          # for each door i, find the number of unique ways that this person gets to it, then take the mean across i's
+          transition_counts <- colSums(as.matrix(transition_matrix > 0)+0)
           transition_counts <- mean(transition_counts[transition_counts != 0])
+          
+          # -------------------------------------------------------------------------
+          # TRANSITION WEIGHTS
+          # for each door i, find the door j that most often goes to i. take its probability (n clicks on i / n clicks on j before i)
+          transition_weights <- colSums(transition_matrix)/colMax(transition_matrix)
+          transition_weights <- mean(transition_weights[transition_weights != 0])
+          
 
+          # -------------------------------------------------------------------------
+          # ENTROPY
+          
+          
           if (!is.nan(transition_counts)) {
             # store
-            transitions[nrow(transitions) + 1, ] <- data.frame(su, se, co, ss, transition_counts)
+            transitions[nrow(transitions) + 1, ] <- data.frame(su, se, co, ss, transition_counts, transition_weights)
           }
         }
       }
@@ -77,9 +82,8 @@ count_stereo <- function(data, opt, graph) {
 
   ### following a shortest path?
   path_match <- data.frame(
-    sub = integer(), ses = integer(), t = integer(), context = integer(), subses = integer(), match_tsp = double(),
-    travelled_tsp = double(), shortest_tsp = double(), overshoot_tsp = double(), match_hp = double(),
-    travelled_hp = double(), shortest_hp = double(), overshoot_hp = double()
+    sub = integer(), ses = integer(), t = integer(), context = integer(), subses = integer(), travelled = double(),
+    travelling_match = double(), travelling_overshoot = double(), hamiltonian_match = double(), hamiltonian_overshoot = double()
   )
   for (su in unique(data$sub)) {
     for (se in c(2)) {
@@ -95,14 +99,14 @@ count_stereo <- function(data, opt, graph) {
           }
 
           ### travelling salesman solutions (return to start)
-          opt_sub <- opt %>% filter(sub == su, context == co, algorithm == "tsp")
-          df <- compare_paths(graph, events, opt_sub, "tsp")
-          df_tsp <- df %>% rename(match_tsp = match, shortest_tsp = shortest, travelled_tsp = travelled, overshoot_tsp = overshoot)
+          opt_sub <- opt %>% filter(sub == su, context == co, algorithm == "travelling")
+          df <- compare_paths(graph, events, opt_sub, "travelling")
+          df_tsp <- df %>% rename(travelling_match = match, travelling_overshoot = overshoot)
 
           ### shortest hamiltonian path (don't return to start)
-          opt_sub <- opt %>% filter(sub == su, context == co, algorithm == "hp")
-          df <- compare_paths(graph, events, opt_sub, "hp")
-          df_hp <- df %>% rename(match_hp = match, shortest_hp = shortest, travelled_hp = travelled, overshoot_hp = overshoot)
+          opt_sub <- opt %>% filter(sub == su, context == co, algorithm == "hamiltonian")
+          df <- compare_paths(graph, events, opt_sub, "hamiltonian")
+          df_hp <- df %>% rename(hamiltonian_match = match, hamiltonian_overshoot = overshoot) %>% select(hamiltonian_match,hamiltonian_overshoot)
 
           # stack
           tmp <- cbind(tmp, df_tsp, df_hp)
@@ -127,8 +131,11 @@ count_stereo <- function(data, opt, graph) {
   return(stereo)
 }
 
+colMax <- function(data) {
+  sapply(data, max, na.rm = TRUE, simplify = "array")
+}
 compare_paths <- function(graph, events, opt_sub, alg) {
-  df <- data.frame(match = integer(), travelled = double(), shortest = double(), overshoot = double())
+  df <- data.frame(travelled = double(), match = double(), overshoot = double())
 
   # find what doors belonged to this context
   doors_cc <- unique(events$door)
@@ -152,7 +159,7 @@ compare_paths <- function(graph, events, opt_sub, alg) {
     #   if they've selected four doors, compare directly to the shortest path
     path <- trial$door # the doors they clicked, in the order they took (inc. re-clicks)
     if (length(unique(path)) == 4) {
-      if (alg == "tsp") {
+      if (alg == "travelling") {
         path <- c(path, path[1])
       } # close the loop!
       travelled <- 0
@@ -166,7 +173,7 @@ compare_paths <- function(graph, events, opt_sub, alg) {
       d <- matrix(unlist(path), nrow = 1, byrow = FALSE)
       d <- data.frame(d)
       d <- do.call("rbind", replicate(nrow(paths), d, simplify = FALSE))
-      if (alg == "tsp") {
+      if (alg == "travelling") {
         f <- matrix(path[1], nrow = 1, byrow = FALSE)
         f <- data.frame(f)
         f <- do.call("rbind", replicate(nrow(paths), f, simplify = FALSE))
@@ -191,8 +198,11 @@ compare_paths <- function(graph, events, opt_sub, alg) {
         }
       }
     }
+    travelled <- round(travelled,4)
+    shortest <- round(shortest,4)
+    
     overshoot <- travelled - shortest
-    df[nrow(df) + 1, ] <- data.frame(match, travelled, shortest, overshoot)
+    df[nrow(df) + 1, ] <- data.frame(travelled, match, overshoot)
   }
   return(df)
 }
