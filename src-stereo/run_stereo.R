@@ -1,6 +1,7 @@
 # lydia barnes, may 2024 counts, clusters, and/or traces stereotypical behaviour during training to
 # explain performance at test
 
+# NB: people can get an imperfect match score for the optimal path but an overshoot of zero if they double-click.
 #--------------------------------------------------------------------------------------------------
 # sources
 library(tidyverse)
