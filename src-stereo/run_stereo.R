@@ -7,7 +7,7 @@ library(tidyverse)
 library(gtools)
 source(file.path(getwd(), "src-stereo", "count_stereo.R"))
 
-# settings
+# settings 
 version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
 exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 mes <- "clicks" # measure: 'clicks' or 'hovers'. usually want 'clicks'.

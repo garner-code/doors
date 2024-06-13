@@ -25,7 +25,7 @@ count_stereo <- function(data, opt, graph) {
   ### consistent in transitions?
   transitions <- data.frame(
     sub = integer(), ses = integer(), context = integer(), subses = integer(),
-    transition_counts = double(), transition_weights = double()
+    transition_counts = double(), transition_weights = double(), entropy = double()
   )
   for (su in unique(data$sub)) {
     for (se in unique(data$ses)) {
@@ -61,24 +61,32 @@ count_stereo <- function(data, opt, graph) {
           
           # -------------------------------------------------------------------------
           # TRANSITION WEIGHTS
-          # for each door i, find the door j that most often goes to i. take its probability (n clicks on i / n clicks on j before i)
-          transition_weights <- colSums(transition_matrix)/colMax(transition_matrix)
-          transition_weights <- mean(transition_weights[transition_weights != 0])
+          # for each door i, find the door j that most often goes to it. take its probability (n clicks on j before i / n clicks on i)
+          transition_weights <- colMax(data.frame(transition_matrix))/colSums(transition_matrix)
+          transition_weights <- mean(transition_weights[!is.nan(transition_weights)])
           
 
           # -------------------------------------------------------------------------
           # ENTROPY
-          
+          # for each door i, find the door j that most often goes to it. take its probability, and multiply by the log of its probability
+          # sum the log probabilities and take the negative
+          entropy <- sapply(data.frame(transition_matrix),function(x){x/sum(x)}) 
+          entropy <- entropy + sapply(entropy,log)
+          entropy[is.infinite(entropy)] <- NaN
+          entropy <- -colSums(entropy,na.rm=TRUE)
+          entropy <- mean(entropy[entropy != 0])
           
           if (!is.nan(transition_counts)) {
             # store
-            transitions[nrow(transitions) + 1, ] <- data.frame(su, se, co, ss, transition_counts, transition_weights)
+            transitions[nrow(transitions) + 1, ] <- data.frame(su, se, co, ss, transition_counts, transition_weights, entropy)
           }
         }
       }
     }
   }
-  transitions_accuracy <- accuracy %>% add_column(transition_counts = transitions$transition_counts)
+  transitions_accuracy <- accuracy %>% add_column(transition_counts = transitions$transition_counts, 
+                                                  transition_weights = transitions$transition_weights,
+                                                  entropy = transitions$entropy)
 
   ### following a shortest path?
   path_match <- data.frame(
@@ -122,7 +130,7 @@ count_stereo <- function(data, opt, graph) {
     summarise_all(mean) %>% select(!t)
   t <- transitions_accuracy %>%
     ungroup() %>%
-    select(accuracy, metatask_accuracy, transition_counts)
+    select(accuracy, metatask_accuracy, transition_counts, transition_weights, entropy)
   r <- reclicks %>%
     ungroup() %>%
     select(clicks, reclicks)
@@ -132,7 +140,7 @@ count_stereo <- function(data, opt, graph) {
 }
 
 colMax <- function(data) {
-  sapply(data, max, na.rm = TRUE, simplify = "array")
+  sapply(data, max, na.rm = TRUE)
 }
 compare_paths <- function(graph, events, opt_sub, alg) {
   df <- data.frame(travelled = double(), match = double(), overshoot = double())
