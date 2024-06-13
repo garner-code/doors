@@ -76,28 +76,18 @@ for (ctx in 1:2) {
     ggplot() +
     geom_point(
       aes(
-        x = transition_counts,
+        x = entropy,
         y = reclicks,
-        colour = accuracy
+        colour = accuracy,
       ),
-      alpha = 0.8,
-      size = 15
-    ) +
-    geom_text(
-      aes(
-        x = transition_counts,
-        y = reclicks, 
-        label = sub
-      ),
-      alpha = 0.8,
-      size = 8,
-      position = position_jitter(width = 0.1, height = 0.05)
+      alpha = 1,
+      size = 10,
     ) +
     theme_minimal(base_size = label_sz, base_family = "Roboto") +
     labs(
-      x = "Transitions",
-      y = "Reclicks",
-      colour = "Accuracy"
+      x = "Entropy",
+      y = "Re-Clicks",
+      colour = "Accuracy",
     ) +
     theme(
       panel.background = element_rect(fill = "white", colour = "white"),
