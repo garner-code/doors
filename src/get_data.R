@@ -169,25 +169,36 @@ get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, ap
     
     
     if (ses == "ses-test" && exp == "exp_lt"){
-      # context 1 at test is always a fully transferred context. if it matches train phase context 1, flag that
-      full_transfer <- clicks %>% filter(context==1,door_cc==1) %>% select(door) %>% unique() %>% pull()
+      
+      # the codes under "context" actually indicate transfer (1 = full transfer)
+      # copy them to a "transfer" column
+      clicks <- clicks %>% 
+        mutate(transfer = context)
+      hovers <- hovers %>% 
+        mutate(transfer = context)
+      
+      # find which house was fully transferred
+      #   get the relevant door numbers from the full transfer trials
+      transferred_house <- clicks %>% 
+        filter(context==1,door_cc==1) %>% 
+        select(door) %>% unique() %>% pull()
+      #   compare them to the relevant door numbers from train phase house 1 and 2
       if(all(sort(unlist(full_transfer))==sort(unlist(context_one_doors)))){
-        clicks <- clicks %>% 
-          mutate(train_context_transferred = case_when(context==1 ~ 1, .default=NA))
-        hovers <- hovers %>% 
-          mutate(train_context_transferred = case_when(context==1 ~ 1, .default=NA))
-      }else{
-        # if the full-transfer context at test doesn't match train phase context 1, we know it must match context 2
-        clicks <- clicks %>% 
-          mutate(train_context_transferred = case_when(context==1 ~ 2, .default=NA))
-        hovers <- hovers %>% 
-          mutate(train_context_transferred = case_when(context==1 ~ 1, .default=NA))
+        house <- 1
+      } else {
+        house <- 2
       }
+      #   update "context" with house numbers: 1 or 2 for the fully transferred house, 3 for the new one that we've created
+      clicks <- clicks %>% 
+        mutate(context = case_when(transfer == 1 ~ house, transfer == 0 ~ 3, .default = NA))
+      hovers <- hovers %>% 
+        mutate(context = case_when(transfer == 1 ~ house, transfer == 0 ~ 3, .default = NA))
+      
     }else{
       clicks <- clicks %>% 
-        mutate(train_context_transferred = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
+        mutate(transfer = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
       hovers <- hovers %>% 
-        mutate(train_context_transferred = c(kronecker(matrix(1, nrow(hovers), 1), NA)))
+        mutate(transfer = c(kronecker(matrix(1, nrow(hovers), 1), NA)))
     }
 
     return(list(clicks, hovers))

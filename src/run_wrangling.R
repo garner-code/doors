@@ -51,7 +51,7 @@ subs <- get_subs(exp, version)
 grp_data <- data.frame(
   sub = integer(), ses = integer(), t = integer(), context = integer(), door = integer(),
   door_cc = integer(), on = numeric(), off = numeric(), subses = integer(), door_oc = integer(), 
-  switch = integer(), train_type = integer(), train_context_transferred = integer()
+  switch = integer(), train_type = integer(), transfer = integer()
 )
 
 # for each subject and session, use the function 'get_data' to load their raw data and attach it to
@@ -88,13 +88,13 @@ write_csv(grp_data, fnl)
 
 # by trial
 res <- grp_data %>%
-  group_by(sub, ses, t, context, train_type, train_context_transferred) %>%
+  group_by(sub, ses, t, context, train_type, transfer) %>%
   summarise(
     switch = max(switch), n_clicks = n(), n_cc = sum(door_cc), n_oc = sum(door_oc), 
     accuracy = n_cc / n_clicks,
   )
 rt <- grp_data %>%
-  group_by(sub, ses, t, context, train_type, train_context_transferred) %>%
+  group_by(sub, ses, t, context, train_type, transfer) %>%
   filter(door_cc == 1) %>%
   summarise(rt = min(off)) # time to first correct click offset
 res$rt <- rt$rt
@@ -107,7 +107,7 @@ write_csv(res, fnl)
 
 # by subject
 res <- res %>%
-  group_by(sub, ses, context, switch, train_type, train_context_transferred) %>% 
+  group_by(sub, ses, context, switch, train_type, transfer) %>% 
   summarise_all(mean)
 fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "avg", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)
