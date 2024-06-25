@@ -183,16 +183,16 @@ get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, ap
         filter(context==1,door_cc==1) %>% 
         select(door) %>% unique() %>% pull()
       #   compare them to the relevant door numbers from train phase house 1 and 2
-      if(all(sort(unlist(full_transfer))==sort(unlist(context_one_doors)))){
+      if(all(sort(unlist(transferred_house))==sort(unlist(context_one_doors)))){
         house <- 1
       } else {
         house <- 2
       }
       #   update "context" with house numbers: 1 or 2 for the fully transferred house, 3 for the new one that we've created
       clicks <- clicks %>% 
-        mutate(context = case_when(transfer == 1 ~ house, transfer == 0 ~ 3, .default = NA))
+        mutate(context = case_when(transfer == 1 ~ house, transfer == 2 ~ 3, .default = NA))
       hovers <- hovers %>% 
-        mutate(context = case_when(transfer == 1 ~ house, transfer == 0 ~ 3, .default = NA))
+        mutate(context = case_when(transfer == 1 ~ house, transfer == 2 ~ 3, .default = NA))
       
     }else{
       clicks <- clicks %>% 
