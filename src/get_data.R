@@ -188,17 +188,22 @@ get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, ap
       } else {
         house <- 2
       }
-      #   update "context" with house numbers: 1 or 2 for the fully transferred house, 3 for the new one that we've created
+      #   update "context" with new house numbers
+      #   record which train phase house no. maps to full transfer (house 3)
       clicks <- clicks %>% 
-        mutate(context = case_when(transfer == 1 ~ house, transfer == 2 ~ 3, .default = NA))
+        mutate(context = case_when(transfer == 1 ~ 3, transfer == 2 ~ 4, .default = NA),
+               original_house = case_when(transfer == 1 ~ house, .default = NA))
       hovers <- hovers %>% 
-        mutate(context = case_when(transfer == 1 ~ house, transfer == 2 ~ 3, .default = NA))
+        mutate(context = case_when(transfer == 1 ~ 3, transfer == 2 ~ 4, .default = NA),
+               original_house = case_when(transfer == 1 ~ house, .default = NA))
       
     }else{
       clicks <- clicks %>% 
-        mutate(transfer = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
+        mutate(transfer = c(kronecker(matrix(1, nrow(clicks), 1), NA)),
+               original_house = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
       hovers <- hovers %>% 
-        mutate(transfer = c(kronecker(matrix(1, nrow(hovers), 1), NA)))
+        mutate(transfer = c(kronecker(matrix(1, nrow(hovers), 1), NA)),
+               original_house = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
     }
 
     return(list(clicks, hovers))

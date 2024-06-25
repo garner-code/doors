@@ -51,7 +51,7 @@ subs <- get_subs(exp, version)
 grp_data <- data.frame(
   sub = integer(), ses = integer(), t = integer(), context = integer(), door = integer(),
   door_cc = integer(), on = numeric(), off = numeric(), subses = integer(), door_oc = integer(), 
-  switch = integer(), train_type = integer(), transfer = integer()
+  switch = integer(), train_type = integer(), transfer = integer(), original_house = integer()
 )
 
 # for each subject and session, use the function 'get_data' to load their raw data and attach it to
