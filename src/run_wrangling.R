@@ -43,7 +43,7 @@ if (!dir.exists(data_path)) {
 }
 
 ### load an up-to-date list of participants
-subs <- c("sub-01") #get_subs(exp, version)
+subs <- get_subs(exp, version)
 
 ### extract events from the raw data
 
