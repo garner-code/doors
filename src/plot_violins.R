@@ -1,4 +1,5 @@
-# lydia barnes, march 2024 generates figues from 'doors' project RT and accuracy outputs
+# lydia barnes, march 2024 
+# generates figures from 'doors' project RT and accuracy outputs
 
 ### sources
 library(tidyverse)
@@ -9,8 +10,8 @@ library(ggsci)
 project_path <- getwd()
 
 # settings
-version <- "20240409"
-exp <- "exp_ts" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
+version <- "study-01"
+exp <- "exp_lt" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
 ses <- "ses-train" # session: 'ses-learn','ses-train','ses-test'
 mes <- "clicks" # measure: 'clicks' or 'hovers'
 title_sz <- 20
@@ -35,21 +36,30 @@ if (ses == "ses-learn") {
 }
 
 if (ses == "ses-learn") {
-  # don't split learning phase data by training type, as that's irrelevant
+  
+  # for the learn phase, we don't group people by training type (low or high switch) or split their data by trial type (stay or switch)
+  # BUT we can view the overall accuracy in each context to check that people acquired both OK
+  
+  # first, relabel context so it's easier to comprehend
+  # drop the few switch trials during the learn phase, as they are likely to be outliers
   res <- res %>%
-    mutate(context = case_when(context == 1 ~ "Context A", context == 2 ~ "Context B"))
-  res <- res %>%
-    filter(switch != "Switch") # drop that one switch trial during the learn phase, as it could skew results
+    mutate(context = case_when(context == 1 ~ "Context A", context == 2 ~ "Context B")) %>%
+    filter(switch != "Switch") 
 
+  # pass the data frame to ggplot  
   res %>%
     ggplot() +
+    
+    # show a horizontal line at chance (.25 as 1 in 4 doors belong to the current context)
     geom_hline(yintercept = 0.25, linetype = "solid", linewidth = 1, alpha = 1, color = "black") +
+    
+    # create one scatter point per participant per context, jittered so that they are spread around and not on top of each other
+    # set scatter point transparency (alpha) and size
     geom_jitter(aes(x = context, y = accuracy), alpha = 0.5, size = mk_sz) +
+    
+    # show the mean and 95% confidence interval for each context
     stat_summary(
-      aes(
-        x = context,
-        y = accuracy
-      ),
+      aes(x = context, y = accuracy),
       fun.data = "mean_cl_normal", geom = "pointrange", linewidth = 2, size = mk_sz / 2,
       alpha = 1
     ) +
@@ -57,6 +67,8 @@ if (ses == "ses-learn") {
       fun = "mean", geom = "line", linewidth = 1,
       alpha = 1
     ) +
+    
+    # tidy up
     theme_minimal() +
     scale_x_discrete(labels = c("Context A", "Context B")) +
     labs(
@@ -68,28 +80,35 @@ if (ses == "ses-learn") {
       axis.text.y = element_text(size = label_sz), legend.text = element_text(size = label_sz), axis.title.x = element_text(size = label_sz),
       axis.title.y = element_text(size = label_sz), legend.title = element_text(size = label_sz)
     )
+  
 } else {
+  
+  # for train and test phases, group by training type (low / high switch) and trial type (switch / stay)
   res %>%
     ggplot() +
+    
+    # show the chance level
     geom_hline(yintercept = 0.25, linetype = "solid", linewidth = 1, alpha = 1, color = "black") +
-    geom_jitter(aes(x = train_type, y = accuracy, shape = switch, color = switch), position = position_jitterdodge(
-      dodge.width = 0.3,
-      jitter.width = 0.1
-    ), alpha = 0.5, size = mk_sz) +
+    
+    # show each person's score by training type (low switch/high switch) and trial type (switch/stay)
+    geom_violin(aes(x = train_type, y = accuracy, color = switch)) +
+    
+    # add a 95% confidence interval
     stat_summary(
-      aes(
-        x = train_type, y = accuracy,
-        shape = switch, color = switch
-      ),
-      fun.data = "mean_cl_normal", geom = "pointrange", position = position_dodge(width = 0.3),
-      linewidth = 2, size = mk_sz / 2, alpha = 1
+      aes(x = train_type, y = accuracy, color = switch),
+      fun.data = "mean_cl_normal",geom = "pointrange", position = position_dodge(width = .9), linewidth = 1, size = mk_sz/2) +
+    
+    # and a mean
+    stat_summary(
+      aes(x = train_type, y = accuracy, color = switch),
+      fun = "mean", geom = "line", position = position_dodge(width = 0.9), linewidth = 1, alpha = 1
     ) +
-    stat_summary(aes(x = train_type, y = accuracy, color = switch),
-      fun = "mean", geom = "line", position = position_dodge(width = 0.3), linewidth = 1, alpha = 1
-    ) +
+    
+    # tidy
     theme_minimal() +
-    scale_shape_discrete(name = "Switch Condition", labels = c("Stay", "Switch")) +
-    scale_color_lancet(guide = "none") +
+    scale_color_lancet(
+      name = "Trial Type", 
+      labels = c("Stay", "Switch")) +
     scale_x_discrete(labels = c("Low Switch", "High Switch")) +
     labs(title = "", x = "Training Condition", y = "Accuracy (%)") +
     theme(
