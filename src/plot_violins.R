@@ -11,8 +11,8 @@ project_path <- getwd()
 
 # settings
 version <- "study-01"
-exp <- "exp_lt" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
-ses <- "ses-train" # session: 'ses-learn','ses-train','ses-test'
+exp <- "exp_ts" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
+ses <- "ses-test" # session: 'ses-learn','ses-train','ses-test'
 mes <- "clicks" # measure: 'clicks' or 'hovers'
 title_sz <- 20
 label_sz <- 20
