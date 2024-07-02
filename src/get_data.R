@@ -167,7 +167,6 @@ get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, ap
     hovers <- hovers %>%
       mutate(train_type = c(kronecker(matrix(1, nrow(hovers), 1), train_type)))
     
-    
     if (ses == "ses-test" && exp == "exp_lt"){
       
       # the codes under "context" actually indicate transfer (1 = full transfer)
@@ -200,10 +199,10 @@ get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, ap
     }else{
       clicks <- clicks %>% 
         mutate(transfer = c(kronecker(matrix(1, nrow(clicks), 1), NA)),
-               original_house = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
+        original_house = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
       hovers <- hovers %>% 
         mutate(transfer = c(kronecker(matrix(1, nrow(hovers), 1), NA)),
-               original_house = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
+        original_house = c(kronecker(matrix(1, nrow(hovers), 1), NA)))
     }
 
     return(list(clicks, hovers))
