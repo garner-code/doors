@@ -12,6 +12,7 @@
 ### sources
 library(tidyverse)
 library(tidyjson)
+library(ggpubr)
 source(file.path(getwd(), "src", "get_subs.R"))
 
 #=========================================================================================================
@@ -21,7 +22,7 @@ exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning tr
 mes <- "clicks" # measure: 'clicks' or 'hovers'. usually want 'clicks'.
 sess <- c("ses-learn"=1, "ses-train"=2) # session: 'ses-learn','ses-train','ses-test'. can select one (e.g. ses <- c('ses-learn')) or multiple (e.g. ses <- c('ses-train','ses-test'))
 subs <- get_subs(exp,version) # list of subject ids
-algs <- c("hp","tsp") # shortest path algorithm: 'hp' (hamiltonian path) or 'tsp' (travelling salesperson)
+algs <- c("hamiltonian","travelling") # shortest path algorithm: 'hp' (hamiltonian path) or 'tsp' (travelling salesperson)
 contexts <- c(1,2)
 
 # settings (figures)
@@ -54,6 +55,75 @@ context_colour <- c("cornflowerblue","seagreen3")
 
 # -------------------------------------------------------------------------
 # plot
+for (sub in subs){
+  sid <- as.numeric(substring(sub,5,7))
+
+  for (alg in algs){
+    
+      for (ctx in contexts){
+        
+        # filter to just this subject, context, and algorithm
+        opt <- optimal %>%
+          filter(sub == sid, algorithm == alg, context == ctx) %>%
+          mutate(solution_factor = factor(solution))
+
+        # set grid colours based on current and other context
+        colours <- rep("white", 16)
+        idx <- unique(opt$door)
+        colours[idx] <- "lightgrey"
+        opt_other <- optimal %>%
+          filter(sub == sid, algorithm == alg, context != ctx) %>%
+          mutate(solution_factor = factor(solution))
+        idx <- unique(opt_other$door)
+        colours[idx] <- "darkgrey"
+        
+        # make the figure
+        tmp <- ggplot() +
+          geom_tile(
+            data = doors, aes(x = xloc, y = yloc, fill = id, colour = "white"), show.legend = FALSE,
+            width = 0.9, height = 0.9, alpha = 1, col = "black"
+          ) +
+          geom_text(
+            data = doors, aes(x = xloc, y = yloc, label = id),
+            size = 10
+          ) +
+          geom_path(
+            data = opt, aes(x = x, y = y, group = solution_factor), linewidth = 2, linejoin = "mitre",
+            lineend = "butt", position = position_jitter(width = 0.1, height = 0.1), alpha = 0.8, arrow = arrow(
+              angle = 15,
+              type = "closed"
+            )
+          ) +
+          theme_minimal() +
+          ylim(0.5, 4.5) +
+          xlim(
+            0.5,
+            4.5
+          ) +
+          scale_fill_gradientn(colours = colours, guide = "none") +
+          labs(
+            title = sprintf("Context %d",ctx), x = "Door Position (x)",
+            y = "Door Position (y)"
+          ) +
+          theme(
+            plot.title = element_text(size = title_sz), axis.text.x = element_text(size = label_sz),
+            axis.text.y = element_text(size = label_sz), legend.text = element_text(size = label_sz), axis.title.x = element_text(size = label_sz),
+            axis.title.y = element_text(size = label_sz), legend.title = element_text(size = label_sz)
+          )
+        
+        if (ctx==1){a <- tmp}else{b <- tmp}
+      }
+    
+    # make multi-panel
+    ggarrange(a,b)
+    
+    # save it
+    fnl <- file.path(project_path, "fig", paste( paste(version, exp, mes, alg, sub, sep = "_"), ".png", sep = ""))
+    ggsave(fnl, plot = last_plot())
+    
+  }
+}
+
 
 for (sub in subs){
   sid <- as.numeric(substring(sub,5,7))
