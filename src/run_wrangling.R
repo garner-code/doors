@@ -92,6 +92,7 @@ res <- grp_data %>%
   summarise(
     switch = max(switch), n_clicks = n(), n_cc = sum(door_cc), n_oc = sum(door_oc), 
     accuracy = n_cc / n_clicks,
+    setting_errors = n_oc / n_clicks
   )
 rt <- grp_data %>%
   group_by(sub, ses, t, context, train_type, transfer) %>%
