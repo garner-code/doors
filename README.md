@@ -1,6 +1,124 @@
-# doors
+## The Study
 
-This repository holds analysis code in R for human behavioural data from a rules-based search task. 
+In this study, we examined the effect of contextual clarity on task switching and learning transfer with a visual search task. This study contains two experiments: one measuring performance on task switching performance (exp_ts) and the other measuring learning transfer (exp_lt). The *transfer* variable in the dataset is not applicable to exp_ts.
+
+The repository holds analysis code in R for human behavioural data. 
+
+### Authors
+
+Dinuk Welagedera
+
+Emily Chung
+
+Lydia Barnes
+
+Kelly Garner
+
+### Task
+
+Participants searched for target animals hiding in houses which contained 16 rooms. A house was represented by a 4 x 4 grid of squares, and animals were limited to appear behind one of 4 squares in each house.
+
+### Data
+
+**sub: subject number**
+
+This variable contains the unique subject ID for each participant.
+
+**ses: session**
+
+Indicates which phase of the experiment that participants were in.
+
+1 = Learning phase. The last 80 trials in the learning phase represent consolidation trials.
+
+2 = Training phase
+
+3 = Test phase
+
+**t: trial number**
+
+This variable records the specific trial number for each participant.
+
+**context**
+
+This variable identifies the house that participants have completed trials in. Each house is associated with a unique task set consisting of target doors which participants are required to learn. House 3 and 4 are only relevant to the learning transfer experiment.
+
+1 = first learning house
+
+2 = second learning house
+
+3 = first transfer house
+
+4 = second transfer house
+
+**switch**
+
+Records whether a particular trial is a switch trial (where the house/context has changed from the last trial), or a nonswitch trial (where the house/context remains the same as the last trial).
+
+1 = switch trial
+
+0 = nonswitch trial
+
+**train_type**
+
+Represents the type of training which participants received during the training phase.
+
+1 = low switch group, where the probability of switch trials is 5% and the probability of nonswitch trials is 95%
+
+2 = high switch group, where the probability of switch trials is 30% and the probability of nonswitch trials is 70%
+
+NA = training type is not applicable (since participants in the learning phase still haven’t been allocated to either the high/low switch group)
+
+**transfer**
+
+Indicates the transfer condition that participants were completing.
+
+1 = complete transfer condition. Target doors in the complete transfer condition were chosen from one of the two learning houses, and mapped identically onto a new grid with a different coloured border.
+
+2 = partial transfer condition, where a combination of the target doors from the two initial learning houses are used. 2 target doors were randomly selected from each of the initial learning houses for this condition.
+
+NA = transfer variable is not applicable (since participants had not reached the transfer stage of the experiment yet)
+
+**n_clicks: number of clicks**
+
+Number of door selections on a given trial.
+
+**n_cc: number of context correct clicks**
+
+Number of context-relevant door selections: those which are relevant to finding the target animal in the current house.
+
+**n_oc: number of other-context correct clicks**
+
+Number of context-irrelevant door selections: those which are relevant to finding the animal in the other house, which was not being shown on the current trial.
+
+**accuracy**
+
+Accuracy is the number of context-relevant door selections relative to the total number of door selections on a single trial. Values for this variable were calculated using the formula n_cc/n_clicks.
+
+We used accuracy to determine how well participants had learned the target door locations for each context.
+
+**rt: response time**
+
+Defined as the time interval from the beginning of a trial (when a participant is able to first interact with the doors), to the first context relevant door selection. Values are measured in milliseconds.
+
+We used response time as a measure of task switching performance. It provides an indication of how long it takes for participants to reload their representation of the doors on each trial. 
+
+**other_accuracy**
+
+Other accuracy identifies the trials where the number of door selections were 4 or less.
+
+TRUE = when number of door selections on a given trial was less than, or equal to 4.
+
+FALSE - when number of selections on a given trial was greater than 4.
+
+We used this variable to calculate the number of points earned in the training stage of the experiment. Participants were awarded points when the target animal was found within 4 moves.
+
+**setting_errors**
+
+Setting errors is the proportion of door selections which are not relevant to the current context, but are relevant to the other learning context, on a given trial. Setting errors are calculated using n_oc/n_clicks.
+
+We used this variable to determine when participants were confusing the target doors for each house i.e., when participants were using target doors for the wrong context.
+
+## The Code
 
 ### Cloning (optional)
 
@@ -26,7 +144,7 @@ git remote add origin https://ilovescience:d2840ajdilt49035iadf_PAT@github.com/i
 
 You can manually download the code instead, and skip cloning. To do that, go to the project on GitHub, click on the green 'Code' button, and select 'Download ZIP'. Just keep in mind that you will have to go back to GitHub and re-download the code to get the latest updates.
 
-### The project
+### Directories
 
 The project has these sub-directories:
 
