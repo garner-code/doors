@@ -14,6 +14,8 @@ Lydia Barnes
 
 Kelly Garner
 
+Christopher Nolan
+
 ### Task
 
 Participants searched for target animals hiding in houses which contained 16 rooms. A house was represented by a 4 x 4 grid of squares, and animals were limited to appear behind one of 4 squares in each house.
