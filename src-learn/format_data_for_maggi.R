@@ -1,16 +1,11 @@
-format_data_for_maggi <- function(nsub=1,nses=1,ncontext=1,method="by_event",specific_doors=FALSE,competitive=FALSE,evaluate_all=FALSE){
+format_data_for_maggi <- function(events,nses=1,method="by_event",specific_doors=FALSE,competitive=FALSE,evaluate_all=FALSE){
 
 # lydia barnes, may 2024
-# reads event data from doors task
 # re-codes accuracy so that "success" trials (<=4 clicks) that inc. context-irrelevant doors are counted as failures
 # classifies trials by whether they provide evidence for learning 1, 2, 3, or 4 doors
 
 # sources
 library(tidyverse)
-
-# event data
-events <- read.csv('res/study-01_exp_lt_clicks_evt.csv')
-events <- events %>% filter(sub==nsub, ses==nses, context==ncontext)
 
 # find the first time each door is the target (their first opportunity to learn)
 doors <- events %>% filter(door_cc==1) %>% pull(door) %>% unique()
