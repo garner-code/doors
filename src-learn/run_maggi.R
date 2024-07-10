@@ -28,7 +28,7 @@ if (simulation){
   # settings ----------------------------------------------------------------
   version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
   exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
-  sess <- c(1,3) # session: 1 = 'ses-learn', 2 = 'ses-train', 3 = 'ses-test'. can select one (e.g. ses <- c(1)) or multiple (e.g. ses <- c(1, 3))
+  sess <- 3 # session: 1 = 'ses-learn', 2 = 'ses-train', 3 = 'ses-test'.
   conditions <- c(1,2) # if ses = 3: 1 = complete transfer, 2 = partial transfer. if ses = 1: 1 = context 1, 2 = context 2
   project_path <- getwd()
   subs <- get_subs(exp, version)
@@ -44,62 +44,54 @@ if (simulation){
   for (sub in subs){
     
     sid <- as.numeric(substring(sub,5,7))
+
+    train_type <- events %>% filter(sub==sid, ses==2) %>% pull(train_type)
+    train_type <- train_type[[1]]
     
-    for (ses in sess){
+    for (condition in conditions){
       
-      this <- events %>% filter(sub==sid, ses==ses)
-      if (ses < 3){
-        this <- this %>% filter(context==ncontext)
-      }else{
-        this <- this %>% filter(transfer==ncontext)
-      }
-      train_type <- this %>% pull(train_type)
-      train_type <- train_type[[1]]
-      
-      for (condition in conditions){
-        
-        # evidence ----------------------------------------------------------------
-        strategies <- format_data_for_maggi(this,nses=ses,method="by_event",specific_doors=FALSE,competitive=TRUE,evaluate_all=FALSE)
+      # evidence ----------------------------------------------------------------
+      strategies <- format_data_for_maggi(nsub=sid,nses=ses,ncontext=condition,method="by_event",specific_doors=FALSE,competitive=TRUE,evaluate_all=FALSE)
+    
+      # maggi -------------------------------------------------------------------
+      if (view_all){
         
         # empty figure ------------------------------------------------------------
         plot(1:nrow(strategies),rep(0,1,nrow(strategies)),type="l",col="black",ylim=c(0,1))
-      
-        # maggi -------------------------------------------------------------------
-        if (view_all){
-          i <- 0
-          for (strategy in names(strategies)[2:length(names(strategies))]){
-            i <- i+1
-            strategy <- strategies %>% pull(strategy)
-            
-            # calculate recency-weighted probability of finding strategy s
-            c(alphas,betas,beta_map,beta_variance) %<-% get_maggi(strategy)
-            
-            # view alphas and betas over time
-            points(1:length(strategy),beta_map,type="l",col=colours[i])
-            
-          }
-        } else {
-          k4 <- strategies %>% pull(k4)
-          c(alphas,betas,beta_map,beta_variance) %<-% get_maggi(k4)
+        
+        i <- 0
+        for (strategy in names(strategies)[2:length(names(strategies))]){
+          i <- i+1
+          strategy <- strategies %>% pull(strategy)
+          
+          # calculate recency-weighted probability of finding strategy s
+          c(alphas,betas,beta_map,beta_variance) %<-% get_maggi(strategy)
+          
+          # view alphas and betas over time
+          points(1:length(strategy),beta_map,type="l",col=colours[i])
+          
         }
-    
-        # threshold ---------------------------------------------------------------
-        
-        # select the trial at which evidence for K4 first exceeds a threshold
-        k4_onset <- min(which(beta_map > .5))
-        if(k4_onset == Inf){k4_onset <- NA}
-        
-        if (ses < 3){
-          context <- condition
-          transfer <- NA
-        }else{
-          context <- NA
-          transfer <- condition
-        }
-        data <- data.frame(sub,ses,context,transfer,train_type,k4_onset)
-        
-        group_data <- rbind(group_data,data)
+      } else {
+        k4 <- strategies %>% pull(k4)
+        c(alphas,betas,beta_map,beta_variance) %<-% get_maggi(k4)
       }
+  
+      # threshold ---------------------------------------------------------------
+      
+      # select the trial at which evidence for K4 first exceeds a threshold
+      k4_onset <- min(which(beta_map > .5))
+      if(k4_onset == Inf){k4_onset <- NA}
+      
+      if (ses < 3){
+        context <- condition
+        transfer <- NA
+      }else{
+        context <- NA
+        transfer <- condition
+      }
+      data <- data.frame(sub,ses,context,transfer,train_type,k4_onset)
+      
+      group_data <- rbind(group_data,data)
     }
   }
 }
