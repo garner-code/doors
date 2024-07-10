@@ -28,7 +28,7 @@ if (simulation){
   # settings ----------------------------------------------------------------
   version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
   exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
-  sess <- 3 # session: 1 = 'ses-learn', 2 = 'ses-train', 3 = 'ses-test'.
+  ses <- 3 # session: 1 = 'ses-learn', 2 = 'ses-train', 3 = 'ses-test'.
   conditions <- c(1,2) # if ses = 3: 1 = complete transfer, 2 = partial transfer. if ses = 1: 1 = context 1, 2 = context 2
   project_path <- getwd()
   subs <- get_subs(exp, version)
@@ -82,6 +82,7 @@ if (simulation){
       k4_onset <- min(which(beta_map > .5))
       if(k4_onset == Inf){k4_onset <- NA}
       
+      sub <- sid
       if (ses < 3){
         context <- condition
         transfer <- NA
