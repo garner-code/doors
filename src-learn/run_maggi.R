@@ -38,11 +38,12 @@ if (simulation){
   events <- read.csv('res/study-01_exp_lt_clicks_evt.csv')
   
   group_data <- data.frame(
-    sub = integer(), ses = integer(), context = integer(), train_type = integer(), transfer = integer(), k4_onset = integer()
+    sub = integer(), ses = integer(), context = integer(), train_type = integer(), transfer = integer(), k4_onset = integer(), nclicks = integer()
   )
   
   for (sub in subs){
     
+    print(sub)
     sid <- as.numeric(substring(sub,5,7))
 
     train_type <- events %>% filter(sub==sid, ses==2) %>% pull(train_type)
@@ -82,6 +83,8 @@ if (simulation){
       k4_onset <- min(which(beta_map > .5))
       if(k4_onset == Inf){k4_onset <- NA}
       
+      nclicks <- length(beta_map)
+      
       sub <- sid
       if (ses < 3){
         context <- condition
@@ -90,11 +93,13 @@ if (simulation){
         context <- NA
         transfer <- condition
       }
-      data <- data.frame(sub,ses,context,transfer,train_type,k4_onset)
+      data <- data.frame(sub,ses,context,transfer,train_type,k4_onset,nclicks)
       
       group_data <- rbind(group_data,data)
     }
   }
 }
 
+write.csv(group_data,'res/study-01_exp_lt_ses-test_k4.csv')
+print('')
 
