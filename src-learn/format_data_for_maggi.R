@@ -12,6 +12,12 @@ library(tidyverse)
 events <- read.csv('res/study-01_exp_lt_clicks_evt.csv')
 events <- events %>% filter(sub==nsub, ses==nses)
 if (nses < 3){
+  
+  # only look at the first learning block for each context, not the consolidation trials
+  first_attempt <- diff(events$context)
+  first_attempt <- which(first_attempt==-1)
+  events <- events[1:first_attempt,1:ncol(events)]
+  
   events <- events %>% filter(context==ncontext)
 }else{
   events <- events %>% filter(transfer==ncontext)
