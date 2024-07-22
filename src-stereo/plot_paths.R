@@ -54,17 +54,20 @@ observed <- observed %>%
 context_colour <- c("cornflowerblue","seagreen3")
 
 # -------------------------------------------------------------------------
-# plot
-for (sub in subs){
-  sid <- as.numeric(substring(sub,5,7))
-
-  for (alg in algs){
-    
+# plot the unique optimal paths
+unique_paths <- seq(from=1, to=max(observed$sub), by = 4)
+for (alg in algs){
+  
+  pl <- list()
+  counter <- 0
+  for (up in unique_paths){
+    counter <- counter+1
+    this_pl <- list()
       for (ctx in contexts){
         
-        # filter to just this subject, context, and algorithm
+        # filter to just this path, context, and algorithm
         opt <- optimal %>%
-          filter(sub == sid, algorithm == alg, context == ctx) %>%
+          filter(sub == up, algorithm == alg, context == ctx) %>%
           mutate(solution_factor = factor(solution))
 
         # set grid colours based on current and other context
@@ -72,13 +75,13 @@ for (sub in subs){
         idx <- unique(opt$door)
         colours[idx] <- "lightgrey"
         opt_other <- optimal %>%
-          filter(sub == sid, algorithm == alg, context != ctx) %>%
+          filter(sub == up, algorithm == alg, context != ctx) %>%
           mutate(solution_factor = factor(solution))
         idx <- unique(opt_other$door)
         colours[idx] <- "darkgrey"
         
         # make the figure
-        tmp <- ggplot() +
+        this_pl[[ctx]] <- ggplot() +
           geom_tile(
             data = doors, aes(x = xloc, y = yloc, fill = id, colour = "white"), show.legend = FALSE,
             width = 0.9, height = 0.9, alpha = 1, col = "black"
@@ -101,35 +104,35 @@ for (sub in subs){
             4.5
           ) +
           scale_fill_gradientn(colours = colours, guide = "none") +
-          labs(
-            title = sprintf("Context %d",ctx), x = "Door Position (x)",
-            y = "Door Position (y)"
-          ) +
           theme(
-            plot.title = element_text(size = title_sz), axis.text.x = element_text(size = label_sz),
-            axis.text.y = element_text(size = label_sz), legend.text = element_text(size = label_sz), axis.title.x = element_text(size = label_sz),
-            axis.title.y = element_text(size = label_sz), legend.title = element_text(size = label_sz)
+            plot.title = element_blank(), 
+            axis.text.x = element_blank(), axis.text.y = element_blank(), 
+            axis.title.x = element_blank(), axis.title.y = element_blank(), 
           )
-        
-        if (ctx==1){a <- tmp}else{b <- tmp}
       }
     
-    # make multi-panel
-    ggarrange(a,b)
-    
-    # save it
-    fnl <- file.path(project_path, "fig", paste( paste(version, exp, mes, alg, sub, sep = "_"), ".png", sep = ""))
-    ggsave(fnl, plot = last_plot())
-    
+    # make it multi-panel, to show contexts side by side
+    pl[[counter]] <- ggarrange(plotlist=this_pl)
+    pl[[counter]] <- annotate_figure(pl[[counter]], top = text_grob(sprintf("Subjects %d to %d", up, up+3), size = title_sz))
   }
+  
+  # stack all subjects' multi-panel figures into on big grid
+  ggarrange(plotlist=pl, nrow = 10, ncol = 2)
+  
+  # save it
+  fnl <- file.path(project_path, "fig", paste( paste(version, exp, mes, alg, sep = "_"), ".png", sep = ""))
+  ggsave(fnl, plot = last_plot(), width = 18, height = 41, limitsize = FALSE)
+    
 }
 
 
-for (sub in subs){
-  sid <- as.numeric(substring(sub,5,7))
-  for (ss in sess){
-    for (ctx in contexts){
-      for (alg in algs){
+for (ss in sess){
+  for (ctx in contexts){
+    for (alg in algs){
+      
+      pl <- list()
+      for (sub in subs){
+        sid <- as.numeric(substring(sub,5,7))
         
         # filter to just this subject, session,  context, and algorithm
         opt <- optimal %>%
@@ -154,7 +157,7 @@ for (sub in subs){
         colours[idx] <- "darkgrey"
 
         # make the figure
-        ggplot() +
+        pl[[sub]] <- ggplot() +
           geom_tile(
             data = doors, aes(x = xloc, y = yloc, fill = id, colour = "white"), show.legend = FALSE,
             width = 0.9, height = 0.9, alpha = 1, col = "black"
@@ -183,22 +186,24 @@ for (sub in subs){
           ) +
           scale_fill_gradientn(colours = colours, guide = "none") +
           labs(
-            title = "Observed and Optimal Paths", x = "Door Position (x)",
-            y = "Door Position (y)", colour = "Trial"
+            title = sprintf("Subject %d",sid)
           ) +
           theme(
-            plot.title = element_text(size = title_sz), axis.text.x = element_text(size = label_sz),
-            axis.text.y = element_text(size = label_sz), legend.text = element_text(size = label_sz), axis.title.x = element_text(size = label_sz),
-            axis.title.y = element_text(size = label_sz), legend.title = element_text(size = label_sz)
+            plot.title=element_text(size=title_sz), 
+            axis.text.x = element_blank(), axis.text.y = element_blank(), 
+            axis.title.x = element_blank(), axis.title.y = element_blank()
           )
-        
-        # save it
-        fnl <- file.path(project_path, "fig", paste(paste(version, exp, names(sess[sess==ss]), mes, alg, sub, 
-          paste("context", ctx,
-          sep = "-"
-        ), sep = "_"), ".png", sep = ""))
-        ggsave(fnl, plot = last_plot())
       }
+      
+      ggarrange(plotlist = pl, nrow = 18, ncol = 4)
+      
+      # save it
+      fnl <- file.path(project_path, "fig", paste(paste(version, exp, names(sess[sess==ss]), mes, alg, 
+        paste("context", ctx,
+        sep = "-"
+      ), sep = "_"), ".png", sep = ""))
+      ggsave(fnl, plot = last_plot(), width = 16, height = 72, limitsize = FALSE)
+      
     }    
   }
 }
