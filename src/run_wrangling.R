@@ -12,7 +12,7 @@ source(file.path(getwd(), "src", "get_data.R"))
 # !you will want to update these settings a lot during piloting, when the task code or the way you
 # test changes, or when you test participants on different subsets of the task phases
 version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
-exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
+exp <- "exp_ts" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 sess <- c("ses-learn","ses-train","ses-test") # session: 'ses-learn','ses-train','ses-test'. can select one (e.g. ses <- c('ses-learn')) or multiple (e.g. ses <- c('ses-train','ses-test'))
 
 # !you can change the following settings if you want to, but the defaults will usually be fine
@@ -51,7 +51,8 @@ subs <- get_subs(exp, version)
 grp_data <- data.frame(
   sub = integer(), ses = integer(), t = integer(), context = integer(), door = integer(),
   door_cc = integer(), on = numeric(), off = numeric(), subses = integer(), door_oc = integer(), 
-  switch = integer(), train_type = integer(), transfer = integer(), original_house = integer()
+  switch = integer(), train_type = integer(), transfer = integer(), full_transfer_first = integer(),
+  original_house = integer()
 )
 
 # for each subject and session, use the function 'get_data' to load their raw data and attach it to
@@ -69,13 +70,12 @@ for (sub in subs) {
         select(train_type) %>% 
         unique() %>% 
         pull()
-      context_one_doors <- grp_data %>% 
-        filter(sub==sid,ses==ses,context==1,door_cc==1) %>% 
-        select(door) %>% 
-        unique() %>% 
-        pull()
+      train_doors <- grp_data %>% 
+        filter(sub==sid,ses==ses,door_cc==1) %>% 
+        select(door,context) %>% 
+        unique()
     }
-    data <- get_data(data_path, exp, sub, ses, train_type, context_one_doors, apply_threshold, min_dur) # load and format raw data
+    data <- get_data(data_path, exp, sub, ses, train_type, train_doors, apply_threshold, min_dur) # load and format raw data
     grp_data <- rbind(grp_data, data[[idx]]) # add to the 'grp_data' data frame so we end up with all subjects and sessions in one spreadsheet
   }
 }
@@ -88,7 +88,7 @@ write_csv(grp_data, fnl)
 
 # by trial
 res <- grp_data %>%
-  group_by(sub, ses, t, context, train_type, transfer) %>%
+  group_by(sub, ses, t, context, train_type, transfer, full_transfer_first, original_house) %>%
   summarise(
     switch = max(switch), n_clicks = n(), n_cc = sum(door_cc), n_oc = sum(door_oc), 
     accuracy = n_cc / n_clicks,
@@ -100,15 +100,47 @@ rt <- grp_data %>%
   summarise(rt = min(off)) # time to first correct click offset
 res$rt <- rt$rt
 
+# add accuracy calculated the way it was for points during the task
 other_accuracy <- 4-res$n_clicks >= 0
 res$other_accuracy <- other_accuracy
+
+# record the number of times they switch between door_cc, door_oc, and door_nc on each trial. 
+# if it's a non-switch trial, assume that they're coming from door_cc. if it's a switch, assume that they're coming from door_oc.
+grp_data <- grp_data %>% mutate(door_nc = case_when(door_cc==1 ~ 0, door_oc == 1 ~ 0, .default=1))
+nswitches <- c()
+for (s in unique(grp_data$sub)){
+  for (ss in unique(grp_data$ses)){
+
+    tmp <- grp_data %>% filter(sub==s,ses==ss)
+    
+    for (trial in unique(tmp$t)){
+      data <- tmp %>% filter(t==trial)
+      switch <- data$switch[[1]]
+      if(switch==0){
+        door_cc <- c(1,data$door_cc)
+        door_oc <- c(0,data$door_oc)
+      }else if(switch==1){
+        door_cc <- c(0,data$door_cc)
+        door_oc <- c(1,data$door_oc)
+      }
+      door_nc <- c(0,data$door_nc)
+      cc_switches <- diff(door_cc)
+      oc_switches <- diff(door_oc)
+      nc_switches <- diff(door_nc)
+      switches <- data.frame(cc_switches,oc_switches,nc_switches)
+      switches <- switches %>% mutate(switch = case_when(cc_switches==1~1,oc_switches==1~1,nc_switches==1~1,.default=0))
+      nswitches <- c(nswitches,sum(switches$switch))
+    }
+  }
+}
+res$context_changes <- nswitches
 
 fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "trl", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)
 
 # by subject
 res <- res %>%
-  group_by(sub, ses, context, switch, train_type, transfer) %>% 
+  group_by(sub, ses, context, switch, train_type, transfer, full_transfer_first, original_house) %>%
   summarise_all(mean)
 fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "avg", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)

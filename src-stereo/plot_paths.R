@@ -25,9 +25,18 @@ subs <- get_subs(exp,version) # list of subject ids
 algs <- c("hamiltonian","travelling") # shortest path algorithm: 'hp' (hamiltonian path) or 'tsp' (travelling salesperson)
 contexts <- c(1,2)
 
+sort_paths <- TRUE
+sort_by <- 'entropy' #entropy or transition_counts
+
 # settings (figures)
 title_sz <- 30
 label_sz <- 30
+
+
+# -------------------------------------------------------------------------
+# rm sub-62, who happened to have a very low rate of switches into context 1 during training sub-session 2
+subs <- data.frame(subs) %>% filter(subs!="sub-62") %>% pull(subs)
+
 #=========================================================================================================
 # read the optimal path data
 project_path <- getwd()
@@ -52,6 +61,16 @@ observed <- observed %>%
 
 # assign path colours for context
 context_colour <- c("cornflowerblue","seagreen3")
+
+
+# -------------------------------------------------------------------------
+# stereotypy measures from train phase
+fnl <-
+  file.path(project_path, "res", paste(paste(version, exp, mes, "stereotypy", sep = "_"), ".csv",
+                                       sep = ""
+  ))
+stereo <- read_csv(fnl, show_col_types = FALSE)
+stereo <- stereo %>% group_by(sub,ses,context) %>% summarise_all(mean) %>% ungroup() %>% select(!c(subses,ses))
 
 # -------------------------------------------------------------------------
 # plot the unique optimal paths
@@ -125,9 +144,24 @@ for (alg in algs){
     
 }
 
-
 for (ss in sess){
   for (ctx in contexts){
+    
+    # -------------------------------------------------------------------------
+    # sort by transitions / entropy
+    if(sort_paths){
+      
+      subs <- data.frame(subs)
+      if(sort_by=="entropy"){
+        subs$sort_by <- stereo %>% filter(context==ctx) %>% pull(entropy)
+      }else if (cort_by=="transition_counts"){
+        subs$sort_by <- stereo %>% filter(context==ctx) %>% pull(transition_counts)
+      }
+      subs <- subs %>% arrange(sort_by)
+      subs <- subs$subs
+      
+    }
+    
     for (alg in algs){
       
       pl <- list()
@@ -198,10 +232,15 @@ for (ss in sess){
       ggarrange(plotlist = pl, nrow = 18, ncol = 4)
       
       # save it
-      fnl <- file.path(project_path, "fig", paste(paste(version, exp, names(sess[sess==ss]), mes, alg, 
-        paste("context", ctx,
-        sep = "-"
-      ), sep = "_"), ".png", sep = ""))
+      if(sort_paths){
+        fnl <- file.path(project_path, "fig", paste(paste(version, exp, names(sess[sess==ss]), mes, alg, 
+          paste("context", ctx, sep = "-"), sort_by, sep = "_"), ".png", sep = ""))
+      }else{
+        fnl <- file.path(project_path, "fig", paste(paste(version, exp, names(sess[sess==ss]), mes, alg, 
+          paste("context", ctx,
+          sep = "-"
+        ), sep = "_"), ".png", sep = ""))
+      }
       ggsave(fnl, plot = last_plot(), width = 16, height = 72, limitsize = FALSE)
       
     }    

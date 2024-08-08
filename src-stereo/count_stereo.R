@@ -132,6 +132,7 @@ count_stereo <- function(data, opt, graph) {
   r <- reclicks %>%
     ungroup() %>%
     select(clicks, reclicks)
+  
   stereo <- bind_cols(path_match, t, r)
 
   return(stereo)

@@ -1,4 +1,4 @@
-get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, apply_threshold, min_dur) {
+get_data <- function(data_path, exp, sub, ses, train_type, train_doors, apply_threshold, min_dur) {
   # reads in trial info and sample data from 'trls' and 'beh' files and formats into a
   # one-row-per-trial data frame
 
@@ -175,18 +175,23 @@ get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, ap
         mutate(transfer = context)
       hovers <- hovers %>% 
         mutate(transfer = context)
+
+      # record whether full or partial transfer happened first
+      if(clicks$transfer[[1]]==1){
+        clicks$full_transfer_first <- c(kronecker(matrix(1, nrow(clicks), 1), 1))  
+        hovers$full_transfer_first <- c(kronecker(matrix(1, nrow(hovers), 1), 1))
+      }else if(clicks$transfer[[1]]==2){
+        clicks$full_transfer_first <- c(kronecker(matrix(1, nrow(clicks), 1), 0))
+        hovers$full_transfer_first <- c(kronecker(matrix(1, nrow(hovers), 1), 0))
+      }
       
-      # find which house was fully transferred
-      #   get the relevant door numbers from the full transfer trials
-      transferred_house <- clicks %>% 
-        filter(context==1,door_cc==1) %>% 
-        select(door) %>% unique() %>% pull()
-      #   compare them to the relevant door numbers from train phase house 1 and 2
-      if(all(sort(unlist(transferred_house))==sort(unlist(context_one_doors)))){
+      #   compare test context 1 to the relevant door numbers from train phase house 1 and 2
+      if(all( sort(unlist(doors %>% filter(context==1) %>% pull(door))) == sort(unlist(train_doors %>% filter(context==1) %>% pull(door))) )) {
         house <- 1
-      } else {
+      } else if (all( sort(unlist(doors %>% filter(context==1) %>% pull(door))) == sort(unlist(train_doors %>% filter(context==2) %>% pull(door))) )){
         house <- 2
       }
+      
       #   update "context" with new house numbers
       #   record which train phase house no. maps to full transfer (house 3)
       clicks <- clicks %>% 
@@ -199,12 +204,15 @@ get_data <- function(data_path, exp, sub, ses, train_type, context_one_doors, ap
     }else{
       clicks <- clicks %>% 
         mutate(transfer = c(kronecker(matrix(1, nrow(clicks), 1), NA)),
-        original_house = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
+          full_transfer_first = c(kronecker(matrix(1, nrow(clicks), 1), NA)),
+          original_house = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
       hovers <- hovers %>% 
         mutate(transfer = c(kronecker(matrix(1, nrow(hovers), 1), NA)),
-        original_house = c(kronecker(matrix(1, nrow(hovers), 1), NA)))
+          full_transfer_first = c(kronecker(matrix(1, nrow(hovers), 1), NA)),
+          original_house = c(kronecker(matrix(1, nrow(hovers), 1), NA)))
     }
-
+    
+    
     return(list(clicks, hovers))
   } else {
     stop(paste("check data for", file.path(data_path, exp, sub, ses)))

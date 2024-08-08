@@ -4,12 +4,9 @@ library(ggthemes)
 library(ggExtra)
 
 ### settings
-version <-
-  "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
-exp <-
-  "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
-mes <-
-  "clicks" # measure: 'clicks' or 'hovers'. usually want 'clicks'.
+version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
+exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
+mes <- "clicks" # measure: 'clicks' or 'hovers'. usually want 'clicks'.
 
 # figure settings
 title_sz <- 30
@@ -37,37 +34,31 @@ fnl <-
   ))
 avg <- read_csv(fnl)
 
+# rm sub-62, who happened to have a very low rate of switches into context 1 during training sub-session 2
+avg <- avg %>% filter(sub!=62)
+
 # add test phase accuracy to stereo data frame
-stereo_test <-
-  stereo %>%
-  group_by(sub, ses, context) %>%
-  summarise_all(mean)
-stereo_test$accuracy_test <-
-  avg %>%
-  filter(ses == 3, switch == 0) %>%
-  pull(accuracy) # add test accuracy to stereo results
-stereo_test$context_test <- 
-  avg %>% 
-  filter(ses==3, switch==0) %>% 
-  pull(context)
-tmp <- stereo_test %>% 
-  group_by(sub,ses) %>% 
-  summarise_all(mean)
+stereo_performance <- stereo %>% group_by(sub, ses, context) %>% summarise_all(mean)
+#   train phase performance
+stereo_performance$accuracy <- avg %>% filter(ses==2,switch==0) %>% pull(accuracy)
+stereo_performance$context_changes <- avg %>% filter(ses==2,switch==0) %>% pull(context_changes)
+stereo_performance$train_type <- avg %>% filter(ses==2,switch==0) %>% mutate(train_type = case_when(train_type==1~"Low Switch",train_type==2~"High Switch",.default=NA)) %>% pull(train_type)
+#   test phase performance
+stereo_performance$accuracy_test <- avg %>% filter(ses == 3, switch == 0) %>% pull(accuracy) # add test accuracy to stereo results
+stereo_performance$context_test <- avg %>% filter(ses==3, switch==0) %>% pull(context)
+#   collapsing over subsessions
+tmp <- stereo_performance %>% group_by(sub,ses) %>% summarise_all(mean)
 reclicks_avg <- tmp %>% pull(reclicks)
-overshoot_avg <- tmp %>% pull(overshoot_tsp)
-a <- stereo_test %>%
-  filter(ses == 2,context_test==1) %>%
-  ungroup() %>% 
-  select(sub,overshoot_tsp,reclicks,accuracy_test,context_test)
+overshoot_avg <- tmp %>% pull(travelling_overshoot)
+a <- stereo_performance %>% filter(ses == 2,context_test==3) %>% ungroup() %>% 
+  select(sub,context,travelling_overshoot,reclicks,accuracy,context_changes,train_type,accuracy_test,context_test)
 a$reclicks <- reclicks_avg
-a$overshoot_tsp <- overshoot_avg
-b <- stereo_test %>% 
-  filter(ses==2, context_test==2) %>% 
-  ungroup() %>% 
-  select(sub,overshoot_tsp,reclicks,accuracy_test,context_test)
+a$travelling_overshoot <- overshoot_avg
+b <- stereo_performance %>% filter(ses==2, context_test==4) %>% ungroup() %>% 
+  select(sub,context,travelling_overshoot,reclicks,accuracy,context_changes,train_type,accuracy_test,context_test)
 b$reclicks <- reclicks_avg
-b$overshoot_tsp <- overshoot_avg
-stereo_test <- bind_rows(a,b)
+b$travelling_overshoot <- overshoot_avg
+stereo_performance <- bind_rows(a,b)
 
 test_labels <- c("Full Transfer Accuracy", "Partial Transfer Accuracy")
 
@@ -175,7 +166,7 @@ for (ctx in 1:2) {
 # analyse by test phase context (1 = full transfer, 2 = partial transfer)
 
 # reclicks
-p <- stereo_test %>%
+p <- stereo_performance %>%
   ggplot() +
   geom_point(
     aes(
@@ -230,7 +221,7 @@ ggsave(fnl, plot = p, width = 14, height = 7)
 
   
 # shortest path overshoot
-  p <- stereo_test %>%
+  p <- stereo_performance %>%
     ggplot() +
     geom_point(aes(x = overshoot_tsp, y = accuracy_test,
                    colour = factor(context_test)),

@@ -26,6 +26,9 @@ fnl <- file.path(data_path, paste(paste(version, exp, mes, "evt", sep = "_"), ".
 data <- read_csv(fnl, show_col_types = FALSE)
 data <- data %>% filter(ses == 2)
 
+# rm sub-62, who happened to have a very low rate of switches into context 1 during training sub-session 2
+data <- data %>% filter(sub!=62)
+
 # load shortest path data
 fnl <- file.path(data_path, paste(paste(version, exp, mes, "opt-path", sep = "_"), ".csv", sep = ""))
 opt <- read_csv(fnl, show_col_types = FALSE)

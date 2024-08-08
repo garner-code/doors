@@ -1,6 +1,8 @@
 # lydia barnes, march 2024 
 # generates figures from 'doors' project RT and accuracy outputs
 
+# NB: you will need to filter out switch trials whenever you're not looking at switch effects
+
 ### sources
 library(tidyverse)
 library(ggforce)
@@ -11,7 +13,7 @@ project_path <- getwd()
 
 # settings
 version <- "study-01"
-exp <- "exp_ts" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
+exp <- "exp_lt" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
 ses <- "ses-test" # session: 'ses-learn','ses-train','ses-test'
 mes <- "clicks" # measure: 'clicks' or 'hovers'
 title_sz <- 20
@@ -23,7 +25,9 @@ fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "avg", sep 
 res <- read.csv(fnl)
 res <- res %>%
   mutate(switch = case_when(switch == 0 ~ "Stay", switch == 1 ~ "Switch")) %>%
-  mutate(train_type = as.character(train_type))
+  mutate(train_type = as.character(train_type)) %>% 
+  mutate(transfer_sequence = case_when(full_transfer_first == 0 ~ "Partial-Full", full_transfer_first == 1 ~ "Full-Partial", .default = NA)) %>% 
+  mutate(transfer = case_when(transfer == 1 ~ "Full", transfer == 2 ~ "Partial", .default = NA))
 if (ses == "ses-learn") {
   res <- res %>%
     filter(ses == 1)
@@ -83,34 +87,36 @@ if (ses == "ses-learn") {
   
 } else {
   
+  res <- res %>% filter(switch=="Stay")
+  
   # for train and test phases, group by training type (low / high switch) and trial type (switch / stay)
-  res %>%
+  res %>% 
     ggplot() +
     
     # show the chance level
-    geom_hline(yintercept = 0.25, linetype = "solid", linewidth = 1, alpha = 1, color = "black") +
+    #geom_hline(yintercept = 0.25, linetype = "solid", linewidth = 1, alpha = 1, color = "black") +
     
     # show each person's score by training type (low switch/high switch) and trial type (switch/stay)
-    geom_violin(aes(x = train_type, y = accuracy, color = switch)) +
+    geom_violin(aes(x = train_type, y = accuracy, color = transfer)) +
     
     # add a 95% confidence interval
     stat_summary(
-      aes(x = train_type, y = accuracy, color = switch),
+      aes(x = train_type, y = accuracy, color = transfer),
       fun.data = "mean_cl_normal",geom = "pointrange", position = position_dodge(width = .9), linewidth = 1, size = mk_sz/2) +
     
     # and a mean
     stat_summary(
-      aes(x = train_type, y = accuracy, color = switch),
+      aes(x = train_type, y = accuracy, color = transfer),
       fun = "mean", geom = "line", position = position_dodge(width = 0.9), linewidth = 1, alpha = 1
     ) +
     
     # tidy
     theme_minimal() +
     scale_color_lancet(
-      name = "Trial Type", 
-      labels = c("Stay", "Switch")) +
+      name = "Transfer Type",
+      labels = c("Full","Partial")) + #c("Non-Switch", "Switch")) +
     scale_x_discrete(labels = c("Low Switch", "High Switch")) +
-    labs(title = "", x = "Training Condition", y = "Accuracy (%)") +
+    labs(title = "", x = "Training Group", y = "Accuracy (%)") +
     theme(
       plot.title = element_text(size = title_sz),
       axis.text.x = element_text(size = label_sz), axis.text.y = element_text(size = label_sz), legend.text = element_text(size = label_sz),
