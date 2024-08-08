@@ -12,16 +12,13 @@ library(ggsci)
 project_path <- getwd()
 
 # settings
-version <- "study-01"
 exp <- "exp_lt" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
 ses <- "ses-test" # session: 'ses-learn','ses-train','ses-test'
-mes <- "clicks" # measure: 'clicks' or 'hovers'
-title_sz <- 20
 label_sz <- 20
 mk_sz <- 2
 
 ### plot the data!
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "avg", sep = "_"), ".csv", sep = ""))
+fnl <- file.path(project_path, "res", paste(paste(exp, "avg", sep = "_"), ".csv", sep = ""))
 res <- read.csv(fnl)
 res <- res %>%
   mutate(switch = case_when(switch == 0 ~ "Stay", switch == 1 ~ "Switch")) %>%
@@ -80,7 +77,7 @@ if (ses == "ses-learn") {
       x = "Context", y = "Accuracy (%)"
     ) +
     theme(
-      plot.title = element_text(size = title_sz), axis.text.x = element_text(size = label_sz),
+      plot.title = element_text(size = label_sz), axis.text.x = element_text(size = label_sz),
       axis.text.y = element_text(size = label_sz), legend.text = element_text(size = label_sz), axis.title.x = element_text(size = label_sz),
       axis.title.y = element_text(size = label_sz), legend.title = element_text(size = label_sz)
     )
@@ -118,12 +115,12 @@ if (ses == "ses-learn") {
     scale_x_discrete(labels = c("Low Switch", "High Switch")) +
     labs(title = "", x = "Training Group", y = "Accuracy (%)") +
     theme(
-      plot.title = element_text(size = title_sz),
+      plot.title = element_text(size = label_sz),
       axis.text.x = element_text(size = label_sz), axis.text.y = element_text(size = label_sz), legend.text = element_text(size = label_sz),
       axis.title.x = element_text(size = label_sz), axis.title.y = element_text(size = label_sz), legend.title = element_text(size = label_sz)
     )
 }
-fnl <- file.path(project_path, "fig", paste(paste(version, exp, ses, mes, "avg", sep = "_"), ".pdf",
+fnl <- file.path(project_path, "fig", paste(paste(exp, ses, "avg", sep = "_"), ".pdf",
   sep = ""
 ))
 ggsave(fnl, plot = last_plot())

@@ -1,4 +1,4 @@
-get_data <- function(data_path, exp, sub, ses, train_type, train_doors, apply_threshold, min_dur) {
+get_data <- function(data_path, exp, sub, ses, train_type, train_doors) {
   # reads in trial info and sample data from 'trls' and 'beh' files and formats into a
   # one-row-per-trial data frame
 
@@ -104,15 +104,6 @@ get_data <- function(data_path, exp, sub, ses, train_type, train_doors, apply_th
       mutate(off = c(off[2:length(off)], NA)) %>%
       filter(!is.na(on)) %>%
       mutate(off = case_when(!is.na(off) ~ off, is.na(off) ~ c(on[2:length(on)], NA), .default = NA)) # if two onsets occured back-to-back, use the second onset as the first offset
-
-    # optionally, remove events that lasted less than some duration threshold. this is probably
-    # not important for clicks, but we could set a threshold for hovers
-    if (apply_threshold) {
-      resps <- resps %>%
-        mutate(exclude = case_when(off - on < min_dur ~ TRUE, off - on >= min_dur ~ FALSE, .default = NA)) %>%
-        filter(!exclude)
-    }
-
     trials <- unique(resps$t)
     resps <- resps %>%
       mutate(subses = case_when(t %in% trials[1:round(length(trials) / 2)] ~ 1, .default = 2))
@@ -133,25 +124,19 @@ get_data <- function(data_path, exp, sub, ses, train_type, train_doors, apply_th
       arrange(t)
 
 
-    ### format click and hover events
+    ### format events
+    resps <- resps %>% select(!c(onset, door_p:y)) # remove unnecessary variables
     resps <- resps %>%
-      select(!c(onset, door_p:y)) # remove unnecessary variables
-    clicks <- resps %>%
       filter(open_d == 1) %>%
-      select(!open_d) # find click events
-    hovers <- resps %>%
-      filter(open_d == 9) %>%
-      select(!open_d) %>%
-      mutate(door_cc = door_cc)
+      select(!open_d) # find clicks
 
     # record whether each trial starts with a context switch
-    clicks <- get_switch(clicks)
-    hovers <- get_switch(hovers)
+    resps <- get_switch(resps)
 
     # mark the train phase switch rate and context-one doors in the test phase data
     if (ses == "ses-train") {
       # calculate the switch rate
-      sr <- clicks %>%
+      sr <- resps %>%
         group_by(t) %>%
         summarise(sr = max(switch)) %>%
         ungroup() %>%
@@ -162,27 +147,21 @@ get_data <- function(data_path, exp, sub, ses, train_type, train_doors, apply_th
         train_type <- 1 # low switch rate
       }
     }
-    clicks <- clicks %>%
-      mutate(train_type = c(kronecker(matrix(1, nrow(clicks), 1), train_type)))
-    hovers <- hovers %>%
-      mutate(train_type = c(kronecker(matrix(1, nrow(hovers), 1), train_type)))
+    resps <- resps %>%
+      mutate(train_type = c(kronecker(matrix(1, nrow(resps), 1), train_type)))
     
     if (ses == "ses-test" && exp == "exp_lt"){
       
       # the codes under "context" actually indicate transfer (1 = full transfer)
       # copy them to a "transfer" column
-      clicks <- clicks %>% 
-        mutate(transfer = context)
-      hovers <- hovers %>% 
+      resps <- resps %>% 
         mutate(transfer = context)
 
       # record whether full or partial transfer happened first
-      if(clicks$transfer[[1]]==1){
-        clicks$full_transfer_first <- c(kronecker(matrix(1, nrow(clicks), 1), 1))  
-        hovers$full_transfer_first <- c(kronecker(matrix(1, nrow(hovers), 1), 1))
-      }else if(clicks$transfer[[1]]==2){
-        clicks$full_transfer_first <- c(kronecker(matrix(1, nrow(clicks), 1), 0))
-        hovers$full_transfer_first <- c(kronecker(matrix(1, nrow(hovers), 1), 0))
+      if(resps$transfer[[1]]==1){
+        resps$full_transfer_first <- c(kronecker(matrix(1, nrow(resps), 1), 1))  
+      }else if(resps$transfer[[1]]==2){
+        resps$full_transfer_first <- c(kronecker(matrix(1, nrow(resps), 1), 0))
       }
       
       #   compare test context 1 to the relevant door numbers from train phase house 1 and 2
@@ -194,26 +173,19 @@ get_data <- function(data_path, exp, sub, ses, train_type, train_doors, apply_th
       
       #   update "context" with new house numbers
       #   record which train phase house no. maps to full transfer (house 3)
-      clicks <- clicks %>% 
+      resps <- resps %>% 
         mutate(context = case_when(transfer == 1 ~ 3, transfer == 2 ~ 4, .default = NA),
                original_house = case_when(transfer == 1 ~ house, .default = NA))
-      hovers <- hovers %>% 
-        mutate(context = case_when(transfer == 1 ~ 3, transfer == 2 ~ 4, .default = NA),
-               original_house = case_when(transfer == 1 ~ house, .default = NA))
+
       
     }else{
-      clicks <- clicks %>% 
-        mutate(transfer = c(kronecker(matrix(1, nrow(clicks), 1), NA)),
-          full_transfer_first = c(kronecker(matrix(1, nrow(clicks), 1), NA)),
-          original_house = c(kronecker(matrix(1, nrow(clicks), 1), NA)))
-      hovers <- hovers %>% 
-        mutate(transfer = c(kronecker(matrix(1, nrow(hovers), 1), NA)),
-          full_transfer_first = c(kronecker(matrix(1, nrow(hovers), 1), NA)),
-          original_house = c(kronecker(matrix(1, nrow(hovers), 1), NA)))
+      resps <- resps %>% 
+        mutate(transfer = c(kronecker(matrix(1, nrow(resps), 1), NA)),
+          full_transfer_first = c(kronecker(matrix(1, nrow(resps), 1), NA)),
+          original_house = c(kronecker(matrix(1, nrow(resps), 1), NA)))
     }
-    
-    
-    return(list(clicks, hovers))
+
+    return(resps)
   } else {
     stop(paste("check data for", file.path(data_path, exp, sub, ses)))
   }

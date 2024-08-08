@@ -7,9 +7,7 @@ library(tidyjson)
 source(file.path(getwd(), "src", "get_subs.R"))
 
 # settings
-version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
-exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
-mes <- "clicks" # measure: 'clicks' or 'hovers'. usually want 'clicks'.
+exp <- "exp_ts" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 
 # paths
 project_path <- getwd()
@@ -58,7 +56,7 @@ for (alg in algs) {
 }
 
 ### save the formatted path data
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "opt-path", sep = "_"), ".csv",
+fnl <- file.path(project_path, "res", paste(paste(exp, "opt-path", sep = "_"), ".csv",
   sep = ""
 ))
 write_csv(optimal, fnl)

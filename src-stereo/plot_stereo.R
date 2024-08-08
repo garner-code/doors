@@ -4,12 +4,7 @@ library(ggthemes)
 library(ggExtra)
 
 ### settings
-version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
 exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
-mes <- "clicks" # measure: 'clicks' or 'hovers'. usually want 'clicks'.
-
-# figure settings
-title_sz <- 30
 label_sz <- 30
 
 ### paths
@@ -21,17 +16,11 @@ if (!dir.exists(data_path)) {
 
 ### data
 # stereotypy measures from train phase
-fnl <-
-  file.path(project_path, "res", paste(paste(version, exp, mes, "stereotypy", sep = "_"), ".csv",
-    sep = ""
-  ))
+fnl <- file.path(project_path, "res", paste(paste(exp, "stereotypy", sep = "_"), ".csv", sep = ""))
 stereo <- read_csv(fnl, show_col_types = FALSE)
 
 # general accuracy and response times for all phases
-fnl <-
-  file.path(project_path, "res", paste(paste(version, exp, mes, "avg", sep = "_"), ".csv",
-    sep = ""
-  ))
+fnl <- file.path(project_path, "res", paste(paste(exp, "avg", sep = "_"), ".csv", sep = ""))
 avg <- read_csv(fnl)
 
 # rm sub-62, who happened to have a very low rate of switches into context 1 during training sub-session 2
@@ -84,22 +73,7 @@ for (ctx in 1:2) {
       panel.background = element_rect(fill = "white", colour = "white"),
       plot.background = element_rect(fill = "white", colour = "white")
     )
-  fnl <-
-    file.path(project_path, "fig", paste(
-      paste(
-        version,
-        exp,
-        mes,
-        "stereo",
-        paste("context",
-              ctx,
-              sep = "-"
-        ),
-        sep = "_"
-      ),
-      ".png",
-      sep = ""
-    ))
+  fnl <- file.path(project_path, "fig", paste(paste(exp, "stereotypy", paste("context", ctx, sep = "-"), sep = "_"), ".png", sep = ""))
   ggsave(fnl, plot = p, width = 14, height = 14)
   
   
@@ -142,22 +116,7 @@ for (ctx in 1:2) {
       panel.background = element_rect(fill = "white", colour = "white"),
       plot.background = element_rect(fill = "white", colour = "white")
     )
-  fnl <-
-    file.path(project_path, "fig", paste(
-      paste(
-        version,
-        exp,
-        mes,
-        "transitions",
-        paste("context",
-          ctx,
-          sep = "-"
-        ),
-        sep = "_"
-      ),
-      ".png",
-      sep = ""
-    ))
+  fnl <- file.path(project_path, "fig", paste(paste(exp, "transitions", paste("context", ctx, sep = "-"), sep = "_"),".png",sep = ""))
   ggsave(fnl, plot = p, width = 14, height = 7)
 }
 
@@ -206,17 +165,7 @@ p <- stereo_performance %>%
   )
   
 fnl <-
-  file.path(project_path, "fig", paste(
-    paste(
-      version,
-      exp,
-      mes,
-      "reclicks",
-      sep = "_"
-    ),
-    ".png",
-    sep = ""
-  ))
+  file.path(project_path, "fig", paste(paste(exp, "reclicks", sep = "_"),".png",sep = ""))
 ggsave(fnl, plot = p, width = 14, height = 7)
 
   
@@ -253,10 +202,6 @@ ggsave(fnl, plot = p, width = 14, height = 7)
       plot.background = element_rect(fill = "white", colour = "white")
     )
 
-  fnl <-
-    file.path(project_path, "fig", paste(paste(
-      version, exp, mes, "tsp",
-      sep = "_"
-    ), ".png", sep = ""))
+  fnl <- file.path(project_path, "fig", paste(paste(exp, "overshoot", sep = "_"), ".png", sep = ""))
   ggsave(fnl, plot = p, width = 14, height = 7)
   

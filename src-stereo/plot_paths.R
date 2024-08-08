@@ -18,11 +18,10 @@ source(file.path(getwd(), "src", "get_subs.R"))
 #=========================================================================================================
 # settings (data)
 version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
-exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
-mes <- "clicks" # measure: 'clicks' or 'hovers'. usually want 'clicks'.
+exp <- "exp_ts" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 sess <- c("ses-learn"=1, "ses-train"=2) # session: 'ses-learn','ses-train','ses-test'. can select one (e.g. ses <- c('ses-learn')) or multiple (e.g. ses <- c('ses-train','ses-test'))
 subs <- get_subs(exp,version) # list of subject ids
-algs <- c("hamiltonian","travelling") # shortest path algorithm: 'hp' (hamiltonian path) or 'tsp' (travelling salesperson)
+algs <- c("hamiltonian") # shortest path algorithm: 'hamiltonian' (hamiltonian path) or 'travelling' (travelling salesperson)
 contexts <- c(1,2)
 
 sort_paths <- TRUE
@@ -40,13 +39,13 @@ subs <- data.frame(subs) %>% filter(subs!="sub-62") %>% pull(subs)
 #=========================================================================================================
 # read the optimal path data
 project_path <- getwd()
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "opt-path", sep = "_"), ".csv",
+fnl <- file.path(project_path, "res", paste(paste(exp, "opt-path", sep = "_"), ".csv",
   sep = ""
 ))
 optimal <- read_csv(fnl, show_col_types = FALSE)
 
 # read the observed path data read the data
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "evt", sep = "_"), ".csv", sep = ""))
+fnl <- file.path(project_path, "res", paste(paste(exp, "evt", sep = "_"), ".csv", sep = ""))
 observed <- read_csv(fnl, show_col_types = FALSE)
 
 # re-code door ID as x and y grid positions
@@ -66,7 +65,7 @@ context_colour <- c("cornflowerblue","seagreen3")
 # -------------------------------------------------------------------------
 # stereotypy measures from train phase
 fnl <-
-  file.path(project_path, "res", paste(paste(version, exp, mes, "stereotypy", sep = "_"), ".csv",
+  file.path(project_path, "res", paste(paste(exp, "stereotypy", sep = "_"), ".csv",
                                        sep = ""
   ))
 stereo <- read_csv(fnl, show_col_types = FALSE)
@@ -139,7 +138,7 @@ for (alg in algs){
   ggarrange(plotlist=pl, nrow = 10, ncol = 2)
   
   # save it
-  fnl <- file.path(project_path, "fig", paste( paste(version, exp, mes, alg, sep = "_"), ".png", sep = ""))
+  fnl <- file.path(project_path, "fig", paste( paste(exp, "opt-path", sep = "_"), ".png", sep = ""))
   ggsave(fnl, plot = last_plot(), width = 18, height = 41, limitsize = FALSE)
     
 }
@@ -233,10 +232,10 @@ for (ss in sess){
       
       # save it
       if(sort_paths){
-        fnl <- file.path(project_path, "fig", paste(paste(version, exp, names(sess[sess==ss]), mes, alg, 
+        fnl <- file.path(project_path, "fig", paste(paste(exp, names(sess[sess==ss]), "opt-path", 
           paste("context", ctx, sep = "-"), sort_by, sep = "_"), ".png", sep = ""))
       }else{
-        fnl <- file.path(project_path, "fig", paste(paste(version, exp, names(sess[sess==ss]), mes, alg, 
+        fnl <- file.path(project_path, "fig", paste(paste(exp, names(sess[sess==ss]), "opt-path", 
           paste("context", ctx,
           sep = "-"
         ), sep = "_"), ".png", sep = ""))

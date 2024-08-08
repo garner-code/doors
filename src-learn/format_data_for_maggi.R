@@ -1,4 +1,4 @@
-format_data_for_maggi <- function(nsub=1,nses=1,ncontext=1,method="by_event",specific_doors=FALSE,competitive=FALSE,evaluate_all=FALSE){
+format_data_for_maggi <- function(exp,nsub=1,nses=1,ncontext=1,method="by_event",specific_doors=FALSE,competitive=FALSE,evaluate_all=FALSE){
 
 # lydia barnes, may 2024
 # reads event data from doors task
@@ -9,7 +9,7 @@ format_data_for_maggi <- function(nsub=1,nses=1,ncontext=1,method="by_event",spe
 library(tidyverse)
 
 # event data
-events <- read.csv('res/study-01_exp_lt_clicks_evt.csv')
+events <- read.csv(file.path("res",paste(paste(exp,"evt", sep="_"), ".csv", sep="")))
 events <- events %>% filter(sub==nsub, ses==nses)
 if (nses < 3){
   
@@ -18,6 +18,8 @@ if (nses < 3){
   first_attempt <- which(first_attempt==-1)
   events <- events[1:first_attempt,1:ncol(events)]
   
+  events <- events %>% filter(context==ncontext)
+}else if (exp=="exp_ts"){
   events <- events %>% filter(context==ncontext)
 }else{
   events <- events %>% filter(transfer==ncontext)

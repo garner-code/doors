@@ -25,23 +25,23 @@ if (simulation){
 }else{
   # read real data
   
+  project_path <- getwd()
+  
   # settings ----------------------------------------------------------------
-  version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
-  exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
+  version <- "study-01"
+  exp <- "exp_ts" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
   sess <- c(1,3) # session: 1 = 'ses-learn', 2 = 'ses-train', 3 = 'ses-test'.
   conditions <- c(1,2) # if ses = 3: 1 = complete transfer, 2 = partial transfer. if ses = 1: 1 = context 1, 2 = context 2
-  project_path <- getwd()
-  subs <- get_subs(exp, version)
   colours <- c("darkgreen","limegreen","gold","orange")
   save_plots <- FALSE
-
-  events <- read.csv('res/study-01_exp_lt_clicks_evt.csv')
   
+  subs <- get_subs(exp, version)
+  events <- read.csv(file.path('res',paste(paste(exp, "evt", sep='_'), ".csv", sep='')))
   group_data <- data.frame(
     sub = integer(), ses = integer(), context = integer(), train_type = integer(), transfer = integer(), event = integer(), 
     k1 = numeric(), k2 = numeric(), k3 = numeric(), k4 = numeric(), win = integer(), stable_k4 = integer()
   )
-  
+  session_names <- c('ses-learn','ses-train','ses-test')
   for (subject in subs){
     
     print(subject)
@@ -55,19 +55,21 @@ if (simulation){
       for (condition in conditions){
         
         if (ses < 3){
+          condition_names <- c("context-1","context-2")
           context <- condition
           transfer <- NA
         }else{
+          condition_names <- c("full-transfer","partial-transfer")
           context <- NA
           transfer <- condition
         }
         
         # evidence ----------------------------------------------------------------
-        strategies <- format_data_for_maggi(nsub=sid,nses=ses,ncontext=condition,method="by_event",specific_doors=FALSE,competitive=TRUE,evaluate_all=FALSE)
+        strategies <- format_data_for_maggi(exp,nsub=sid,nses=ses,ncontext=condition,method="by_event",specific_doors=FALSE,competitive=TRUE,evaluate_all=FALSE)
         
         # empty figure ------------------------------------------------------------
         if (save_plots){
-          fnl <- file.path(project_path,'fig',paste(paste(version, exp, subject, ses, condition, "maggi", sep = "_"), ".png", sep = ""))
+          fnl <- file.path(project_path,'fig',paste(paste(exp, subject, session_names[ses], condition_names[condition], "maggi", sep = "_"), ".png", sep = ""))
           png(file = fnl)
           plot(1:nrow(strategies),rep(0,1,nrow(strategies)),type="l",col="black",ylim=c(0,1))
         }
@@ -119,8 +121,8 @@ results <- group_data %>% group_by(sid,ses,context,train_type,transfer) %>% summ
   
 }
 
-write.csv(group_data,file.path('res',paste(paste(version,exp,'maggi-map',sep='_'),'csv', sep='.')))
-write.csv(results,file.path('res',paste(paste(version,exp,'maggi-k4',sep='_'),'csv', sep='.')))
+write.csv(group_data,file.path('res',paste(paste(exp,'maggi-map',sep='_'),'csv', sep='.')))
+write.csv(results,file.path('res',paste(paste(exp,'maggi-k4',sep='_'),'csv', sep='.')))
 
 results_wide <- results %>% filter(ses==1) %>% rename(k4_learn=k4_onset)
 results_wide$k4_test <- results %>% filter(ses==3) %>% pull(k4_onset)

@@ -6,6 +6,7 @@ library(tidyverse)
 source(file.path(getwd(), "src", "get_subs.R"))
 source(file.path(getwd(), "src", "get_switch.R"))
 source(file.path(getwd(), "src", "get_data.R"))
+source(file.path(getwd(), "src", "get_context_changes.R"))
 
 ### settings
 
@@ -14,16 +15,6 @@ source(file.path(getwd(), "src", "get_data.R"))
 version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
 exp <- "exp_ts" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 sess <- c("ses-learn","ses-train","ses-test") # session: 'ses-learn','ses-train','ses-test'. can select one (e.g. ses <- c('ses-learn')) or multiple (e.g. ses <- c('ses-train','ses-test'))
-
-# !you can change the following settings if you want to, but the defaults will usually be fine
-mes <- "clicks" # measure: 'clicks' or 'hovers'. usually want 'clicks'.
-if (mes == "clicks") {
-  idx <- 1
-} else {
-  idx <- 2
-}
-apply_threshold <- FALSE # only retain events that lasted more than a given duration?
-min_dur <- 0.1 # minimum duration
 
 ### paths
 
@@ -75,13 +66,13 @@ for (sub in subs) {
         select(door,context) %>% 
         unique()
     }
-    data <- get_data(data_path, exp, sub, ses, train_type, train_doors, apply_threshold, min_dur) # load and format raw data
-    grp_data <- rbind(grp_data, data[[idx]]) # add to the 'grp_data' data frame so we end up with all subjects and sessions in one spreadsheet
+    data <- get_data(data_path, exp, sub, ses, train_type, train_doors) # load and format raw data
+    grp_data <- rbind(grp_data, data) # add to the 'grp_data' data frame so we end up with all subjects and sessions in one spreadsheet
   }
 }
 
 # save the formatted data
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "evt", sep = "_"), ".csv", sep = ""))
+fnl <- file.path(project_path, "res", paste(paste(exp, "evt", sep = "_"), ".csv", sep = ""))
 write_csv(grp_data, fnl)
 
 ### extract accuracy and response time averages from event data
@@ -101,46 +92,20 @@ rt <- grp_data %>%
 res$rt <- rt$rt
 
 # add accuracy calculated the way it was for points during the task
-other_accuracy <- 4-res$n_clicks >= 0
-res$other_accuracy <- other_accuracy
+win <- 4-res$n_clicks >= 0
+res$win <- win
 
 # record the number of times they switch between door_cc, door_oc, and door_nc on each trial. 
 # if it's a non-switch trial, assume that they're coming from door_cc. if it's a switch, assume that they're coming from door_oc.
 grp_data <- grp_data %>% mutate(door_nc = case_when(door_cc==1 ~ 0, door_oc == 1 ~ 0, .default=1))
-nswitches <- c()
-for (s in unique(grp_data$sub)){
-  for (ss in unique(grp_data$ses)){
+res$context_changes <- get_context_changes(grp_data)
 
-    tmp <- grp_data %>% filter(sub==s,ses==ss)
-    
-    for (trial in unique(tmp$t)){
-      data <- tmp %>% filter(t==trial)
-      switch <- data$switch[[1]]
-      if(switch==0){
-        door_cc <- c(1,data$door_cc)
-        door_oc <- c(0,data$door_oc)
-      }else if(switch==1){
-        door_cc <- c(0,data$door_cc)
-        door_oc <- c(1,data$door_oc)
-      }
-      door_nc <- c(0,data$door_nc)
-      cc_switches <- diff(door_cc)
-      oc_switches <- diff(door_oc)
-      nc_switches <- diff(door_nc)
-      switches <- data.frame(cc_switches,oc_switches,nc_switches)
-      switches <- switches %>% mutate(switch = case_when(cc_switches==1~1,oc_switches==1~1,nc_switches==1~1,.default=0))
-      nswitches <- c(nswitches,sum(switches$switch))
-    }
-  }
-}
-res$context_changes <- nswitches
-
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "trl", sep = "_"), ".csv", sep = ""))
+fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)
 
 # by subject
 res <- res %>%
   group_by(sub, ses, context, switch, train_type, transfer, full_transfer_first, original_house) %>%
   summarise_all(mean)
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "avg", sep = "_"), ".csv", sep = ""))
+fnl <- file.path(project_path, "res", paste(paste(exp, "avg", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)

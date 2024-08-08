@@ -9,16 +9,13 @@ library(ggpubr)
 project_path <- getwd()
 
 # settings
-version <- "study-01"
 exp <- "exp_ts" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
 ses <- "ses-test" # session: 'ses-learn','ses-train','ses-test'
-mes <- "clicks" # measure: 'clicks' or 'hovers'
-
 label_sz <- 20
 mk_sz <- 2
 
 # data
-fnl <- file.path(project_path, "res", paste(paste(version, exp, mes, "trl", sep = "_"), ".csv", sep = ""))
+fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
 res <- read.csv(fnl)
 
 pl <- list()
@@ -41,6 +38,6 @@ for (subject in unique(res$sub)){
     )
 }
 ggarrange(plotlist=pl,nrow=25,ncol=4)
-fnl <- file.path(project_path, "fig", paste(paste(version, exp, mes, "rt-distributions", sep = "_"), ".png", sep = ""))
+fnl <- file.path(project_path, "fig", paste(paste(exp, "rt-distributions", sep = "_"), ".png", sep = ""))
 ggsave(fnl, plot = last_plot(), width = 18, height = 90, limitsize = FALSE)
   

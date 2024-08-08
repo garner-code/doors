@@ -104,9 +104,9 @@ Defined as the time interval from the beginning of a trial (when a participant i
 
 We used response time as a measure of task switching performance. It provides an indication of how long it takes for participants to reload their representation of the doors on each trial. 
 
-**other_accuracy**
+**win**
 
-Other accuracy identifies the trials where the number of door selections were 4 or less.
+Win identifies the trials where the number of door selections were 4 or less.
 
 TRUE = when number of door selections on a given trial was less than, or equal to 4.
 
