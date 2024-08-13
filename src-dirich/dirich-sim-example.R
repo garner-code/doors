@@ -16,58 +16,88 @@ library(wesanderson)
 ##########
 # extra info:
 # https://www.andrewheiss.com/blog/2023/09/18/understanding-dirichlet-beta-intuition/
+# also: https://builtin.com/data-science/dirichlet-distribution
 ##########
-
-####### functions
-
 
 ############################################
 ## step 1. use a dirichlet distribution to pick from the six possible routines
 ## at chance
 n_routines = 6 # there are 6 possible routines
-alpha_k <- rep(1, times=n_routines) # shape parameter, like the beta, uniform priors
+alpha_k <- rep(n_routines, times=n_routines) # shape parameter, like the beta, 
+# here our prior says that each route is likely to happen 1/6 of the time
+# aka I am generating data under the null hypothesis
 n_observations <- 160 # assuming the total counts is 160
 # distribution counts, but for each possible routine
-sim_data <- with_seed(42, {
-  round(rdirichlet(n=1, alpha_k)*n_observations, 0) |>
-    data.frame() |>
-    set_names(paste("r", 1:n_routines, sep="")) |>
-    pivot_longer(everything(), names_to="routine", values_to="counts")
-})
 
+# each trial is a random draw from 
+sim_data <- with_seed(42, {
+  round(apply(rdirichlet(n=1e5, alpha=alpha_k),2,mean)*n_observations, 0) |>
+    data.frame() |>
+    pivot_longer(everything(), names_to = "r", values_to="counts") 
+})
+sim_data$r <- paste("r", 1:n_routines, sep="")
 
 ############################################
 ## step 2
 # first thing I want to do is compute the alphas for the
-# dirichlet distribution, and visualise the results as a beta
-# distribution for each alpha parameter
-sim_data <- sim_data %>% mutate(posterior_alphas = counts + 1)
+# dirichlet distribution (i.e. add the prior to all the
+# counts), and visualise the results as a beta
+# distribution for each alpha parameter - i.e. the probability of each
+# routine being selected
+dir_prior <- 1 # uniform prior (note this is the prior we'll use 
+# for modelling the data)
+sim_data <- sim_data %>% mutate(posterior_alphas = counts + dir_prior)
 
-# the most likely theta parameters for this Dirchlet distribution
-# is simply the expected value for each routine
-sum_counts <- with(sim_data, sum(posterior_alphas))
-sim_data <- sim_data %>% mutate(theta=posterior_alphas / sum_counts)
-with(sim_data, sum(theta)) == 1 # should be TRUE
+# now I have the posterior alphas, I can simulate the distribution
+# and visualise the results
+with_seed(42, {
+  rdirichlet(n = 1e5, alpha = sim_data$posterior_alphas) |> 
+    data.frame() |> 
+    set_names(paste("α", 1:6, sep="")) |> 
+    pivot_longer(everything(), values_to="p", names_to="alpha") |> 
+    ggplot(aes(x = p, fill = alpha)) +
+    geom_density(bounds = c(0, 1), color = NA) +
+    scale_fill_manual(values = wes_palette("IsleofDogs1"), guide = "none") +
+    labs(x = "P") +
+    facet_wrap(vars(alpha)) 
+})
 
-# now I visualise
-viz_dir <- 
-  
-  
-  
-  ggplot(aes(x=theta, fill=routine)) +
-    geom_density(bounds=c(0,1), colour=NA) +
-    scale_x_continuous(breaks = seq(0,1, by=0.2)) +
-    scale_fill_manual(wes_palette("IsleofDogs1")) +
-    labs(x = "p")
-  
-# now what I want to do is plot the separate beta distributions for
-# each alpha, and we can work out which ones share 95% CIs with
+############################################
+## step 3 - forming our beliefs about the data
 
-# now I want to obtain the maximum posterior probability for each routine, for
-# that participant, and the probability that any given alpha 
-# contains the null hypothesis
+## implementation 1: a bayes factor, the strength of which tells
+## us how unlikely the null probabilities are, relative to the observed 
+## probabilities for that participant
+# Now I want to learn 3 things about the data
+# 1) the probability of the alternate hypothesis (that the expected values
+# are larger than 1/6, relative to the probability
+# that all thetas are likely to be around 1/6
+# note that a larger value is greater evidence for the alternate hypothesis
+null_hyp <- rep(1/n_routines, times=n_routines)
+null_llike <- ddirichlet(null_hyp, alpha=sim_data$posterior_alphas, log=TRUE) 
+# log likelihood of the null
+
+exp_theta <- sim_data$posterior_alphas/sum(sim_data$posterior_alphas) 
+# exp value of thetas (given observations)
+
+exp_llike <- ddirichlet(exp_theta, alpha=sim_data$posterior_alphas, log=TRUE)
+lBF <- exp_llike - null_llike
+
+## but the other thing we can do is ask, what is the probability that
+## any given theta will be greater than chance?
 
 
 
-# and now I compute the entropy, to give me a nice measure of how dispersed or
-# clustered the individual's selection of routines was
+
+## and the last thing we want to compute is the entropy over the expected
+## probability vector, which gives a nice number quantifying how routiney someone
+## is
+
+# 2) I also want the log likelihood of the bayes factor
+
+# 2) the expected value of the thetas for that participant
+exp_theta
+
+# 3) the entropy over probabilities for that participant, as our individual diff
+# measure.
+
