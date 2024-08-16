@@ -24,6 +24,7 @@ library(wesanderson)
 ## at chance
 n_routines = 6 # there are 6 possible routines
 alpha_k <- rep(n_routines, times=n_routines) # shape parameter, like the beta, 
+alpha_k <- c(10, 1, 1, 1, 1, 1)
 # here our prior says that each route is likely to happen 1/6 of the time
 # aka I am generating data under the null hypothesis
 n_observations <- 160 # assuming the total counts is 160

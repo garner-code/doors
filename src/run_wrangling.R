@@ -3,6 +3,8 @@
 
 ### sources
 library(tidyverse)
+library(zeallot) #unpack/destructure with %<-%
+
 source(file.path(getwd(), "src", "get_subs.R"))
 source(file.path(getwd(), "src", "get_switch.R"))
 source(file.path(getwd(), "src", "get_data.R"))
@@ -111,7 +113,7 @@ res$win <- win
 #   record the number of times they switch between door_cc, door_oc, and door_nc on each trial. 
 #   if it's a non-switch trial, assume that they're coming from door_cc. if it's a switch, assume that they're coming from door_oc.
 grp_data <- grp_data %>% mutate(door_nc = case_when(door_cc==1 ~ 0, door_oc == 1 ~ 0, .default=1))
-res$context_changes <- get_context_changes(grp_data)
+c(res$context_changes, res$learned_context_changes) %<-% get_context_changes(grp_data)
 
 fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)
