@@ -5,10 +5,10 @@
 library(tidyverse)
 library(zeallot) #unpack/destructure with %<-%
 
-source(file.path(getwd(), "src", "get_subs.R"))
-source(file.path(getwd(), "src", "get_switch.R"))
-source(file.path(getwd(), "src", "get_data.R"))
-source(file.path(getwd(), "src", "get_context_changes.R"))
+source(file.path("src", "get_subs.R"))
+source(file.path("src", "get_switch.R"))
+source(file.path("src", "get_data.R"))
+source(file.path("src","get_setting_stability.R"))
 source(file.path("src","get_transition_probabilities.R"))
 source(file.path("src","get_learned_doors.R"))
 
@@ -44,8 +44,8 @@ subs <- get_subs(exp, version)
 
 # make an empty data frame with all the variables (columns) that we will want
 grp_data <- data.frame(
-  sub = integer(), ses = integer(), t = integer(), context = integer(), door = integer(),
-  door_cc = integer(), on = numeric(), off = numeric(), subses = integer(), door_oc = integer(), 
+  sub = integer(), ses = integer(), subses = integer(), t = integer(), context = integer(), door = integer(),
+  door_cc = integer(), door_oc = integer(), on = numeric(), off = numeric(), 
   switch = integer(), train_type = integer(), transfer = integer(), full_transfer_first = integer(),
   original_house = integer()
 )
@@ -78,10 +78,16 @@ for (sub in subs) {
 # track whether context-incorrect clicks in the test phase land on doors that were learned in the train phase
 if(exp=="exp_lt"){
   door_lc <- get_learned_doors(grp_data)
-  grp_data$door_lc <- door_lc
+  grp_data <- grp_data %>% add_column(door_lc = door_lc, .after="door_oc")
 }else{
-  grp_data <- grp_data %>% mutate(door_lc = c(kronecker(matrix(1, nrow(res), 1), NA)))
+  grp_data <- grp_data %>% mutate(door_lc = c(kronecker(matrix(1, nrow(res), 1), NA)), .after="door_oc")
 }
+
+# track when they changed context into the correct or other context's door set
+select_context <- get_setting_stability(grp_data)
+grp_data <- grp_data %>% add_column(select_cc = select_context$s_cc,select_oc = select_context$s_oc, select_oc_late = select_context$s_oc_late, select_total = select_context$s_total, select_cumulative = select_context$s_cumulative,.after="door_lc")
+
+grp_data <- grp_data %>% mutate(door_nc = case_when(door_cc==1 ~ 0, door_oc == 1 ~ 0, .default=1), .after="door_oc")
 
 # save the formatted data
 fnl <- file.path(project_path, "res", paste(paste(exp, "evt", sep = "_"), ".csv", sep = ""))
@@ -91,44 +97,46 @@ write_csv(grp_data, fnl)
 
 # by trial
 res <- grp_data %>%
-  group_by(sub, ses, t, context, train_type, transfer, full_transfer_first, original_house) %>%
+  group_by(sub, ses, subses, t, context, train_type, transfer, full_transfer_first, original_house) %>%
   summarise(
-    switch = max(switch), n_clicks = n(), n_cc = sum(door_cc), n_oc = sum(door_oc), n_lc = sum(door_lc),
+    switch = max(switch), n_clicks = n(), n_cc = sum(door_cc), n_oc = sum(door_oc), n_lc = sum(door_lc), n_nc = sum(door_nc),
+    setting_sticks = select_oc[1],
+    setting_slips = max(select_oc_late),
+    context_changes = sum(select_cc)+sum(select_oc),
     accuracy = n_cc / n_clicks,
-    general_errors = (n_clicks - n_cc - n_oc) / n_clicks,
+    general_errors = n_cc / n_clicks,
     setting_errors = n_oc / n_clicks,
     learned_setting_errors = n_lc / n_clicks
   )
-rt <- grp_data %>%
-  group_by(sub, ses, t, context, train_type, transfer) %>%
+res$context_changes[intersect(which(res$switch==1),which(res$ses==2))] <- res$context_changes[intersect(which(res$switch==1),which(res$ses==2))]-1
+res$rt <- grp_data %>%
+  group_by(sub, ses, subses, t, context, train_type, transfer) %>%
   filter(door_cc == 1) %>%
   summarise(rt = min(off)) # time to first correct click offset
-res$rt <- rt$rt
-
-# add accuracy calculated the way it was for points during the task
-win <- 4-res$n_clicks >= 0
-res$win <- win
-
-# context changes
-#   record the number of times they switch between door_cc, door_oc, and door_nc on each trial. 
-#   if it's a non-switch trial, assume that they're coming from door_cc. if it's a switch, assume that they're coming from door_oc.
-grp_data <- grp_data %>% mutate(door_nc = case_when(door_cc==1 ~ 0, door_oc == 1 ~ 0, .default=1))
-c(res$context_changes, res$learned_context_changes) %<-% get_context_changes(grp_data)
+res$win <- 4-res$n_clicks >= 0
 
 fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)
 
 # by subject
+#   grouping by subsession
 res <- res %>%
-  group_by(sub, ses, context, switch, train_type, transfer, full_transfer_first, original_house) %>%
+  group_by(sub, ses, subses, context, switch, train_type, transfer, full_transfer_first, original_house) %>%
   summarise_all(mean)
-
-# transition probabilities
-#   record how likely they are to move between the partial-transfer doors pairs during the train phase
 res <- res %>% ungroup() %>% mutate(transition_probabilities = c(kronecker(matrix(1, nrow(res), 1), NA)))
 if(exp=="exp_lt"){
   res$transition_probabilities[which(res$ses==2)] <- get_transition_probabilities(grp_data)
 }
+fnl <- file.path(project_path, "res", paste(paste(exp, "avg-ss", sep = "_"), ".csv", sep = ""))
+write_csv(res, fnl)
 
+#   just grouping by session
+res <- res %>%
+  group_by(sub, ses, context, switch, train_type, transfer, full_transfer_first, original_house) %>%
+  summarise_all(mean)
+res <- res %>% ungroup() %>% mutate(transition_probabilities = c(kronecker(matrix(1, nrow(res), 1), NA)))
+if(exp=="exp_lt"){
+  res$transition_probabilities[which(res$ses==2)] <- get_transition_probabilities(grp_data)
+}
 fnl <- file.path(project_path, "res", paste(paste(exp, "avg", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)

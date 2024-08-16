@@ -10,13 +10,14 @@ get_learned_doors <- function(data){
     learned_doors <- c(house_1[is.na(match(house_1,partial_doors))], house_2[is.na(match(house_2,partial_doors))])
     learned_doors_not_reused <- c(house_1[is.na(match(house_1,full_doors))], house_2[is.na(match(house_2,full_doors))])
 
+    # for all test phase trials, if they clicked on a door that was relevant to the other context that's operating in this phase, that's a learned door
     tmp <- data %>% filter(sub==su) %>% mutate(door_lc = case_when(ses==1~NA,ses==2~NA,transfer==1~door_oc,.default=0) )
     
-    # for full transfer trials, find when someone clicked on one of the learned doors that's not included in the full transfer door set
+    # for full transfer trials, find when someone clicked on one of the learned doors that's NOT included in the full transfer door set
     idx <- intersect( which(tmp$door %in% learned_doors_not_reused), intersect(which(tmp$ses==3),which(tmp$transfer==1)) )
     tmp$door_lc[idx] <- 1
     
-    # for partial transfer trials, find when someone clicked on one of the learned doors
+    # for partial transfer trials, find when someone clicked on one of the learned doors (learned doors exclude partial transfer doors)
     idx <- intersect(which(tmp$door %in% learned_doors),intersect(which(tmp$ses==3),which(tmp$transfer==2)))
     tmp$door_lc[idx] <- 1
     
