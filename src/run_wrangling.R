@@ -60,7 +60,7 @@ for (sub in subs) {
     train_type <- NA
     context_one_doors <- NA
     
-    if (sub=="sub-64" && ses=="ses-learn"){
+    if (exp=="exp_lt" && sub=="sub-64" && ses=="ses-learn"){
      print("skipping missing data") 
     }else{
       
@@ -88,7 +88,7 @@ if(exp=="exp_lt"){
   door_lc <- get_learned_doors(grp_data)
   grp_data <- grp_data %>% add_column(door_lc = door_lc, .after="door_oc")
 }else{
-  grp_data <- grp_data %>% mutate(door_lc = c(kronecker(matrix(1, nrow(res), 1), NA)), .after="door_oc")
+  grp_data <- grp_data %>% mutate(door_lc = c(kronecker(matrix(1, nrow(grp_data), 1), NA)), .after="door_oc")
 }
 
 # track when they changed context into the correct or other context's door set
@@ -148,6 +148,6 @@ res <- res %>% ungroup() %>% mutate(transition_probabilities = c(kronecker(matri
 if(exp=="exp_lt"){
   res$transition_probabilities[which(res$ses==2)] <- get_transition_probabilities(grp_data)
 }
-res <- res %>% select(!subses, !t)
+res <- res %>% select(!subses)
 fnl <- file.path(project_path, "res", paste(paste(exp, "avg", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)

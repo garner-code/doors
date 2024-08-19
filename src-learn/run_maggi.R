@@ -52,7 +52,7 @@ if (simulation){
     
     for (ses in sess){
       
-      if(subject=="sub-64"){
+      if(exp=="exp_lt" && ses==1 && subject=="sub-64"){
         print("skipping missing data")
       }else{
         
@@ -128,6 +128,9 @@ results <- group_data %>% group_by(sid,ses,context,train_type,transfer) %>% summ
 write.csv(group_data,file.path('res',paste(paste(exp,'maggi-map',sep='_'),'csv', sep='.')))
 write.csv(results,file.path('res',paste(paste(exp,'maggi-k4',sep='_'),'csv', sep='.')))
 
+if(exp=="exp_lt"){
+  results <- results %>% filter(sid!=64)
+}
 results_wide <- results %>% filter(ses==1) %>% rename(k4_learn=k4_onset)
 results_wide$k4_test <- results %>% filter(ses==3) %>% pull(k4_onset)
 
