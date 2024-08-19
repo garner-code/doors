@@ -94,7 +94,7 @@ Number of context-irrelevant door selections: those which are relevant to findin
 
 **n_lc: number of learned-context correct clicks**
 
-Number of clicks on doors that have been relevant during the learn and train phase, but do not belong to the current or other context in the test phase. This is only relevant for the test phase of exp_lt.
+Number of clicks on doors that have been relevant during the learn and train phase, but do not belong to the current context in the test phase. This is only relevant for the test phase of exp_lt.
 
 **accuracy**
 
@@ -134,7 +134,7 @@ Like setting_errors, this tracks whether clicks on doors that are not relevant t
 
 **context_changes**
 
-This tracks how many times people shift between the currently relevant, currently irrelevant, and never relevant sets of doors. We assume that they start in the correct context for the previous trial, so that the first click in the other context (or on a never-relevant door) is a context change. This disadvantages uncued trials in the train phase on which the true context changes, so we subtract one from the context change score on those trials. 
+This tracks how many times people shift between the currently relevant and currently irrelevant sets of doors (ignoring clicks on never-relevant doors). For cued trials, we assume that they start in the correct context for the current trial. For uncued trials, we assume that they start in the context that was correct on the previous trial. This means that, on uncued switch trials, they have to change context at least once to get into the correct context and find the target. We subtract 1 from the number of context changes on uncued switch trials to account for this. 
 
 **transition_probabilities**
 

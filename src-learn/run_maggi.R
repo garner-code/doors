@@ -29,7 +29,7 @@ if (simulation){
   
   # settings ----------------------------------------------------------------
   version <- "study-01"
-  exp <- "exp_ts" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
+  exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
   sess <- c(1,3) # session: 1 = 'ses-learn', 2 = 'ses-train', 3 = 'ses-test'.
   conditions <- c(1,2) # if ses = 3: 1 = complete transfer, 2 = partial transfer. if ses = 1: 1 = context 1, 2 = context 2
   colours <- c("darkgreen","limegreen","gold","orange")
@@ -52,66 +52,70 @@ if (simulation){
     
     for (ses in sess){
       
-      for (condition in conditions){
+      if(subject=="sub-64"){
+        print("skipping missing data")
+      }else{
         
-        if (ses < 3){
-          condition_names <- c("context-1","context-2")
-          context <- condition
-          transfer <- NA
-        }else{
-          condition_names <- c("full-transfer","partial-transfer")
-          context <- NA
-          transfer <- condition
-        }
-        
-        # evidence ----------------------------------------------------------------
-        strategies <- format_data_for_maggi(exp,nsub=sid,nses=ses,ncontext=condition,method="by_event",specific_doors=FALSE,competitive=TRUE,evaluate_all=FALSE)
-        
-        # empty figure ------------------------------------------------------------
-        if (save_plots){
-          fnl <- file.path(project_path,'fig',paste(paste(exp, subject, session_names[ses], condition_names[condition], "maggi", sep = "_"), ".png", sep = ""))
-          png(file = fnl)
-          plot(1:nrow(strategies),rep(0,1,nrow(strategies)),type="l",col="black",ylim=c(0,1))
-        }
-        
-        # maggi -------------------------------------------------------------------
-        i <- 0
-        beta_maps <- matrix(NA,4,nrow(strategies))
-        for (strategy in names(strategies)[2:length(names(strategies))]){
-          i <- i+1
-          strategy <- strategies %>% pull(strategy)
+        for (condition in conditions){
           
-          # calculate recency-weighted probability of finding strategy s
-          c(alphas,betas,beta_map,beta_variance) %<-% get_maggi(strategy)
-          
-          # store data
-          beta_maps[i,1:ncol(beta_maps)] <- beta_map
-          
-          if (save_plots){
-            # view alphas and betas over time
-            points(1:length(strategy),beta_map,type="l",col=colours[i])
+          if (ses < 3){
+            condition_names <- c("context-1","context-2")
+            context <- condition
+            transfer <- NA
+          }else{
+            condition_names <- c("full-transfer","partial-transfer")
+            context <- NA
+            transfer <- condition
           }
           
+          # evidence ----------------------------------------------------------------
+          strategies <- format_data_for_maggi(exp,nsub=sid,nses=ses,ncontext=condition,method="by_event",specific_doors=FALSE,competitive=TRUE,evaluate_all=FALSE)
+          
+          # empty figure ------------------------------------------------------------
+          if (save_plots){
+            fnl <- file.path(project_path,'fig',paste(paste(exp, subject, session_names[ses], condition_names[condition], "maggi", sep = "_"), ".png", sep = ""))
+            png(file = fnl)
+            plot(1:nrow(strategies),rep(0,1,nrow(strategies)),type="l",col="black",ylim=c(0,1))
+          }
+          
+          # maggi -------------------------------------------------------------------
+          i <- 0
+          beta_maps <- matrix(NA,4,nrow(strategies))
+          for (strategy in names(strategies)[2:length(names(strategies))]){
+            i <- i+1
+            strategy <- strategies %>% pull(strategy)
+            
+            # calculate recency-weighted probability of finding strategy s
+            c(alphas,betas,beta_map,beta_variance) %<-% get_maggi(strategy)
+            
+            # store data
+            beta_maps[i,1:ncol(beta_maps)] <- beta_map
+            
+            if (save_plots){
+              # view alphas and betas over time
+              points(1:length(strategy),beta_map,type="l",col=colours[i])
+            }
+            
+          }
+          
+          if (save_plots){
+            dev.off()
+          }
+          
+          # format the data
+          data <- data.frame(sub = integer(), ses = integer(), context = integer(), train_type = integer(), transfer = integer(), event = integer(), k1 = numeric(), k2 = numeric(), k3 = numeric(), k4 = numeric(), win = integer())
+          for (event in 1:length(beta_map)){
+            win <- which(beta_maps[1:nrow(beta_maps),event] == max(beta_maps[1:nrow(beta_maps),event]))
+            if (sum(beta_maps[1:nrow(beta_maps),event])==0){win <- NA}
+            tmp <- data.frame(sid, ses, context, transfer, train_type, event, k1 = beta_maps[1,event], k2 = beta_maps[2,event], k3 = beta_maps[3,event], k4 = beta_maps[4,event], win)
+            data <- rbind(data,tmp)
+          }
+          last_strategy_change <- max(which(diff(data$win)!=0))+1
+          data <- data %>% 
+            mutate(stable_k4 = case_when(event < last_strategy_change ~ 0, event %in% intersect(which(event >= last_strategy_change), which(win == 4)) ~ 1, .default = NA))
+          
+          group_data <- rbind(group_data,data)
         }
-        
-        if (save_plots){
-          dev.off()
-        }
-
-        # format the data
-        data <- data.frame(sub = integer(), ses = integer(), context = integer(), train_type = integer(), transfer = integer(), event = integer(), k1 = numeric(), k2 = numeric(), k3 = numeric(), k4 = numeric(), win = integer())
-        for (event in 1:length(beta_map)){
-          win <- which(beta_maps[1:nrow(beta_maps),event] == max(beta_maps[1:nrow(beta_maps),event]))
-          if (sum(beta_maps[1:nrow(beta_maps),event])==0){win <- NA}
-          tmp <- data.frame(sid, ses, context, transfer, train_type, event, k1 = beta_maps[1,event], k2 = beta_maps[2,event], k3 = beta_maps[3,event], k4 = beta_maps[4,event], win)
-          data <- rbind(data,tmp)
-        }
-        last_strategy_change <- max(which(diff(data$win)!=0))+1
-        data <- data %>% 
-          mutate(stable_k4 = case_when(event < last_strategy_change ~ 0, event %in% intersect(which(event >= last_strategy_change), which(win == 4)) ~ 1, .default = NA))
-        
-        group_data <- rbind(group_data,data)
-        
       }
     }
   }
