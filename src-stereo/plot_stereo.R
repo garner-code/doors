@@ -23,8 +23,10 @@ stereo <- read_csv(fnl, show_col_types = FALSE)
 fnl <- file.path(project_path, "res", paste(paste(exp, "avg", sep = "_"), ".csv", sep = ""))
 avg <- read_csv(fnl)
 
-# rm sub-62, who happened to have a very low rate of switches into context 1 during training sub-session 2
-avg <- avg %>% filter(sub!=62)
+if (exp=="exp_lt"){
+  # rm sub-62, who happened to have a very low rate of switches into context 1 during training sub-session 2
+  avg <- avg %>% filter(sub!=62)
+}
 
 # add test phase accuracy to stereo data frame
 stereo_performance <- stereo %>% group_by(sub, ses, context) %>% summarise_all(mean)

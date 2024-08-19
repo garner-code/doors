@@ -7,7 +7,7 @@ library(tidyjson)
 source(file.path(getwd(), "src", "get_subs.R"))
 
 # settings
-exp <- "exp_ts" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
+exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 
 # paths
 project_path <- getwd()
