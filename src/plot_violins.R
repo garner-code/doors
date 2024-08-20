@@ -12,7 +12,7 @@ library(ggsci)
 project_path <- getwd()
 
 # settings
-exp <- "exp_lt" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
+exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 ses <- "ses-test" # session: 'ses-learn','ses-train','ses-test'
 label_sz <- 20
 mk_sz <- 2
