@@ -11,19 +11,21 @@ project_path <- getwd()
 # settings
 exp <- "exp_ts" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
 ses <- "ses-test" # session: 'ses-learn','ses-train','ses-test'
-label_sz <- 20
-mk_sz <- 2
+label_sz <- 10
 
 # data
 fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
 res <- read.csv(fnl)
+
+# trim high RTs for each trial type
+# res <- res %>% group_by(switch) %>% filter(rt<(mean(rt)+3*sd(rt)))
 
 pl <- list()
 for (subject in unique(res$sub)){
   tmp <- res %>% filter(sub==subject)
   pl[[subject]] <- tmp %>% 
     ggplot() +
-    geom_density(aes(x=rt, colour = factor(ses), linetype = factor(switch)), linewidth = 1.5) + 
+    geom_density(aes(x=rt, colour = factor(ses), linetype = factor(switch)), linewidth = 1) + 
     guides(linetype=FALSE) +
     theme_minimal() +
     scale_color_brewer(
@@ -39,5 +41,5 @@ for (subject in unique(res$sub)){
 }
 ggarrange(plotlist=pl,nrow=25,ncol=4)
 fnl <- file.path(project_path, "fig", paste(paste(exp, "rt-distributions", sep = "_"), ".png", sep = ""))
-ggsave(fnl, plot = last_plot(), width = 18, height = 90, limitsize = FALSE)
+ggsave(fnl, plot = last_plot(), width = 12, height = 45, limitsize = FALSE)
   
