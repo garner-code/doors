@@ -1,7 +1,4 @@
-# lydia barnes, march 2024 
-# generates figures from 'doors' project RT and accuracy outputs
-
-# NB: you will need to filter out switch trials whenever you're not looking at switch effects
+# lydia barnes, august 2024 
 
 ### sources
 library(tidyverse)

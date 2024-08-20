@@ -17,8 +17,8 @@ label_sz <- 10
 fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
 res <- read.csv(fnl)
 
-# trim high RTs for each trial type
-# res <- res %>% group_by(switch) %>% filter(rt<(mean(rt)+3*sd(rt)))
+# trim high RTs for each condition
+res <- res %>% group_by(sub,ses,switch) %>% filter(rt<(mean(rt)+3*sd(rt)))
 
 pl <- list()
 for (subject in unique(res$sub)){

@@ -35,11 +35,11 @@ count_stereo <- function(exp, data, opt, graph) {
           for (ss in unique(data$subses)) {
             
             # reduce to correct click events on stay trials
-            events <- data %>% filter(switch == 0, sub == su, ses == se, context == co, subses == ss, door_cc == 1)
+            events <- data %>% filter(switch == 0, sub == su, ses == se, context == co, subses == ss)
   
             # -------------------------------------------------------------------------
             # make the full transitions matrix
-            transition_matrix <- matrix(0, nrow = 16, ncol = 4)
+            transition_matrix <- matrix(0, nrow = 16, ncol = 16)
             doors <- unique(events$door)
             
             # select a trial
@@ -51,7 +51,7 @@ count_stereo <- function(exp, data, opt, graph) {
                 for (i in 2:nrow(trial)) {
                   door <- trial$door[i]
                   previous <- trial$door[i - 1]
-                  transition_matrix[previous, which(doors==door)] <- transition_matrix[previous,which(doors==door)]+1 
+                  transition_matrix[previous, door] <- transition_matrix[previous, door]+1 
                 }
               }
             }
@@ -59,22 +59,22 @@ count_stereo <- function(exp, data, opt, graph) {
             # -------------------------------------------------------------------------
             # TRANSITION COUNTS
             # for each door i, find the number of unique ways that this person gets to it, then take the mean across i's
-            transition_counts <- colSums(as.matrix(transition_matrix > 0)+0)
-            transition_counts <- mean(transition_counts)
+            transition_counts <- colSums(transition_matrix)
+            transition_counts <- mean(transition_counts[transition_counts!=0])
             
             # -------------------------------------------------------------------------
             # TRANSITION WEIGHTS
             # for each door i, find the door j that most often goes to it. take its probability (n clicks on j before i / n clicks on i)
             transition_weights <- colMax(data.frame(transition_matrix))/colSums(transition_matrix)
-            transition_weights <- mean(transition_weights)
+            transition_weights <- mean(transition_weights[!is.na(transition_weights)])
   
             # -------------------------------------------------------------------------
             # ENTROPY
-            # for each door i, find the door j that most often goes to it. take its probability, and multiply by the log of its probability
-            # sum the log probabilities and take the negative
-            entropy <- sapply(data.frame(transition_matrix),function(x){x/sum(x)}) 
+            # take the probability of each transition, given the number of transitions
+            # multiply by the log of its probability, sum log probabilities, and take the negative
+            entropy <- transition_matrix/sum(transition_matrix)
             entropy <- entropy * sapply(entropy,log2)
-            entropy <- mean(-colSums(entropy,na.rm=TRUE))
+            entropy <- -mean(entropy,na.rm=TRUE)
             
             if (!is.nan(transition_counts)) {
               # store
