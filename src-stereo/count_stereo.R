@@ -72,9 +72,10 @@ count_stereo <- function(exp, data, opt, graph) {
             # ENTROPY
             # take the probability of each transition, given the number of transitions
             # multiply by the log of its probability, sum log probabilities, and take the negative
-            entropy <- transition_matrix/sum(transition_matrix)
+            entropy <- transition_matrix/colSums(transition_matrix)
             entropy <- entropy * sapply(entropy,log2)
-            entropy <- -sum(entropy,na.rm=TRUE)
+            entropy <- -colSums(entropy,na.rm=TRUE)
+            entropy <- mean(entropy)
             
             if (!is.nan(transition_counts)) {
               # store
