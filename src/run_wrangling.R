@@ -112,7 +112,7 @@ res <- grp_data %>%
     setting_slips = max(select_oc_late),
     context_changes = sum(select_cc)+sum(select_oc),
     accuracy = n_cc / n_clicks,
-    general_errors = n_cc / n_clicks,
+    general_errors = n_nc / n_clicks,
     setting_errors = n_oc / n_clicks,
     learned_setting_errors = n_lc / n_clicks
   )
