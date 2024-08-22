@@ -24,7 +24,7 @@ count_stereo <- function(exp, data, opt, graph) {
 
   ### consistent in transitions?
   transitions <- data.frame(
-    sub = integer(), ses = integer(), context = integer() = integer(),
+    sub = integer(), ses = integer(), context = integer(),
     transition_counts = double(), transition_weights = double(), entropy = double()
   )
   print("getting the transition matrix")
@@ -77,7 +77,7 @@ count_stereo <- function(exp, data, opt, graph) {
           
           if (!is.nan(transition_counts)) {
             # store
-            transitions[nrow(transitions) + 1, ] <- data.frame(su, se, co, ss, transition_counts, transition_weights, entropy)
+            transitions[nrow(transitions) + 1, ] <- data.frame(su, se, co, transition_counts, transition_weights, entropy)
           }
         }
     }
@@ -102,7 +102,7 @@ count_stereo <- function(exp, data, opt, graph) {
         # make the data frame
         tmp <- data.frame(sub = integer(), ses = integer(), t = integer(), context = integer())
         for (tr in unique(events$t)) {
-          tmp[nrow(tmp) + 1, ] <- data.frame(su, se, tr, co, ss)
+          tmp[nrow(tmp) + 1, ] <- data.frame(su, se, tr, co)
         }
 
         ### travelling salesman solutions (return to start)
