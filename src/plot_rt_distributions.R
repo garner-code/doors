@@ -18,7 +18,7 @@ fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv"
 res <- read.csv(fnl)
 
 # trim high RTs for each condition
-res <- res %>% group_by(sub,ses,switch) %>% filter(rt<(mean(rt)+3*sd(rt)))
+#res <- res %>% group_by(sub,ses,switch) %>% filter(rt<(mean(rt)+3*sd(rt)))
 
 pl <- list()
 for (subject in unique(res$sub)){

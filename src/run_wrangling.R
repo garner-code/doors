@@ -124,6 +124,11 @@ rt <- grp_data %>%
 res$rt <- rt$rt
 res$win <- 4-res$n_clicks >= 0
 
+# trim RTs
+if (exp=="exp_ts"){
+  res <- res %>% filter(rt<=10) %>% ungroup() %>% group_by(ses,context,switch) %>% filter(rt<=(mean(rt)+(3*sd(rt))))
+}
+
 fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)
 
