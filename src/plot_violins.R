@@ -113,15 +113,6 @@ if (ses == "ses-learn") {
     
     # tidy
     theme_classic() +
-    #guides(fill = FALSE) +
-    
-    # opt 1: red and blue colour scheme
-    #scale_color_lancet(
-    #  name = "Trial Type",
-    #  labels = c("Non-Switch", "Switch")
-    #) +
-    # opt 2: orange and green colour scheme
-    #scale_fill_lancet() +
     scale_colour_manual(values = c("#F8CF71","#ABEBC6"),
                         name = "Trial Type",
                         labels = c("Non-Switch","Switch")) +
@@ -140,17 +131,5 @@ fnl <- file.path(project_path, "fig", paste(paste(exp, ses, "avg", sep = "_"), "
   sep = ""
 ))
 ggsave(fnl, plot = last_plot())
-
-res <- res %>% 
-  select(!transfer:setting_slips) %>%
-  select(!accuracy:transfer_sequence) %>% 
-  pivot_wider(names_from = switch, values_from = context_changes)
-res <- res %>% 
-  mutate(trial_type_effect = Switch - Stay)
-
-res %>% 
-  ggplot(aes(x = train_type,y = trial_type_effect)) +
-  geom_violin() +
-  geom_boxplot()
   
 
