@@ -130,6 +130,6 @@ if (ses == "ses-learn") {
 fnl <- file.path(project_path, "fig", paste(paste(exp, ses, "avg", sep = "_"), ".pdf",
   sep = ""
 ))
-ggsave(fnl, plot = last_plot())
-  
+ggsave(fnl, plot = last_plot(), unit = "cm", width = 20, height = 17, limitsize = FALSE)
+
 

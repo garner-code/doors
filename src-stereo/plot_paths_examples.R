@@ -43,7 +43,7 @@ observed <- observed %>%
 
 
 # assign path colours for context
-context_colour <- c("cornflowerblue","seagreen3")
+context_colour <- c("#79402E") #ISLE OF DOGS
 
 
 # -------------------------------------------------------------------------
@@ -88,12 +88,12 @@ for (ss in sess){
             data = doors, aes(x = xloc, y = yloc, fill = id, colour = "white"), show.legend = FALSE,
             width = 0.8, height = 0.8, alpha = 1, col = "lightgrey"
           ) +
-          geom_path(
-            data = opt, aes(x = x, y = y, group = solution_factor), linewidth = ln_sz, linejoin = "mitre",
-            lineend = "butt", position = position_jitter(width = 0.1, height = 0.1), 
-            alpha = 0.8, 
-            arrow = arrow(angle = 15, type = "closed", length = unit(.1,"cm"))
-          ) +
+          #geom_path(
+          #  data = opt, aes(x = x, y = y, group = solution_factor), linewidth = ln_sz, linejoin = "mitre",
+          #  lineend = "butt", position = position_jitter(width = 0.1, height = 0.1), 
+          #  alpha = 0.8, 
+          #  arrow = arrow(angle = 15, type = "closed", length = unit(.1,"cm"))
+          #) +
           geom_path(
             data = obs, aes(x = x, y = y, group = t_factor),
             linewidth = ln_sz, linejoin = "mitre", lineend = "butt", position = position_jitter(width = 0.1, height = 0.1),
