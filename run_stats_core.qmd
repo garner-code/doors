@@ -26,51 +26,50 @@ exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning tr
 data <- read.csv(file.path(project_path, "res", paste(paste(exp, "avg", sep = "_"), ".csv", sep = "")))
 ```
 
-First, store the transition probabilities for later.
-
-```{r}
-tmp <- data %>% filter(ses == 2 & switch == 0) %>% 
-  select(sub, context, transition_probabilities) %>%
-  group_by(sub) %>% 
-  summarise(mu_tp = mean(transition_probabilities)) %>% 
-  mutate(sub = factor(sub))
-```
-
 Make sure that the key variables are formatted as factors, ready for ANOVAs.
 
 ```{r}
-data <- data %>% 
-  select(sub, ses, train_type, switch, context_changes, general_errors, 
-         accuracy, setting_errors, 
-         transfer, full_transfer_first, learned_setting_errors) %>% 
+training_data <- data %>% 
+  filter(ses==2) %>% 
+  select(sub, train_type, switch, context_changes, accuracy,
+         setting_errors, general_errors) %>% 
   mutate(train_type = train_type-1) %>% 
-  mutate(sub = factor(sub), train_type = factor(train_type), switch = factor(switch), transfer = factor(transfer), full_transfer_first = factor(full_transfer_first))
-levels(data$train_type) <- c("low", "high")
-levels(data$switch) <- c("stay", "switch")
-levels(data$transfer) <- c("complete", "partial")
-levels(data$full_transfer_first) <- c("pf", "cf")
-```
+  mutate(sub = factor(sub), 
+         train_type = factor(train_type), 
+         train_type = case_when(train_type==0~"low",train_type==1~"high"),
+         switch = factor(switch), 
+         switch = case_when(switch==0~"stay",switch==1~"switch"))
 
-We'll also need to read in the output from our "know 4" analysis.
+test_data <- data %>% 
+  filter(ses==3,switch==0) %>% 
+  select(sub, train_type, transfer, full_transfer_first, accuracy, learned_setting_errors)
+test_data$general_errors <- 1 - test_data$accuracy - test_data$learned_setting_errors
 
-```{r}
+tmp <- data %>% filter(ses == 2 & switch == 0) %>% 
+  select(sub, context, transition_probabilities) %>%
+  group_by(sub) %>% 
+  summarise(mu_tp = mean(transition_probabilities))
+test_data <- inner_join(test_data, tmp, by="sub")
+
 k4_data <- read_csv(file.path(project_path, "res", paste(paste(exp, "maggi-k4", sep = "_"), ".csv", sep = "")), show_col_types = FALSE)
 k4_data <- k4_data %>% 
   filter(ses==3) %>% 
   select(sid, transfer, nclicks, k4_onset) %>% 
-  rename(sub=sid) %>% 
-  mutate(sub = factor(sub), transfer = factor(transfer))
-levels(k4_data$transfer) <- c("complete", "partial")
+  rename(sub=sid)
+test_data <- inner_join(test_data, k4_data, by=c("sub","transfer"))
+
+test_data <- test_data %>% 
+  mutate(train_type = train_type-1) %>% 
+  mutate(sub = factor(sub), 
+         train_type = factor(train_type), 
+         train_type = case_when(train_type==0~"low",train_type==1~"high"),
+         transfer = factor(transfer), 
+         transfer = case_when(transfer==1~"complete",transfer==2~"partial"),
+         full_transfer_first = factor(full_transfer_first),
+         full_transfer_first = case_when(full_transfer_first==0~"pf",full_transfer_first==1~"cf"))
 ```
 
 # Train phase
-
-Select just the data from the train phase, and the variables that we need to analyse.
-
-```{r}
-training_data <- data %>% filter(ses==2) %>% select(!c(ses,transfer,full_transfer_first,learned_setting_errors))
-
-```
 
 ## General errors
 
@@ -135,22 +134,12 @@ contrast(sum_emm_int, simple_effect_contrasts) #contrasts analyses for simple ef
 
 ```{r}
 training_data %>% 
-  group_by(switch) %>% 
+  group_by(train_type, switch) %>% 
   summarise(means = mean(context_changes),
             sd = sd(context_changes)) 
 ```
 
 # Test phase
-
-Now, we look at whether experiencing different rates of context changes during training (train_type) altered how people adapted to complete and partial transfer.
-
-First, remove the switch trials. We can also add the transition probabilities from the training phase, and the "know 4" data, to the test phase data frame.
-
-```{r}
-test_data <- data %>% filter(ses==3, switch=="stay")
-test_data <- inner_join(test_data, k4_data, by=c("sub","transfer"))
-test_data <- inner_join(test_data, tmp, by="sub")
-```
 
 ## Accuracy
 
@@ -231,6 +220,9 @@ Do people who have experienced low or high rates of context switching during tra
 ```{r}
 test_results <- aov_ez("sub", "general_errors", test_data, within = "transfer", between = c("train_type", "full_transfer_first"))
 summary(test_results)
+
+test_results <- ezANOVA(data=test_data, dv=general_errors, wid=sub, within=transfer, between=.(train_type, full_transfer_first))
+test_results
 ```
 
 ## Transition probabilities
