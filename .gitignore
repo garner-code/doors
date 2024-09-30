@@ -2,6 +2,7 @@
 doc
 fig
 res
+stats
 .Rproj.user
 .lintr
 run_stats_core_files
