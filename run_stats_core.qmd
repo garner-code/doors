@@ -1,22 +1,36 @@
 ---
 title: "Statistical Tests for the 'Doors' project"
-format: html
 editor: visual
+format: 
+  html:
+    theme: cerulean
+    grid:
+      sidebar-width: 200px
+      body-width: 1000px
+      margin-width: 200px
+      gutter-width: 1.5rem
+    toc: true
+    toc-expand: 2
+execute: 
+  engine: knitr
+  echo: true
+  warning: false
 ---
+
+```{r}
+#| echo: false
+options(width=1000)
+```
 
 # Preparing the data
 
 ```{r}
-#| include: false
 library(tidyverse)
 library(ez)
 library(emmeans)
 library(afex)
 afex_options(emmeans_model = "multivariate")
-
 ```
-
-## Load and format the data
 
 We'll use the generic wrangled data file, "exp_lt_avg.csv".
 
@@ -24,6 +38,7 @@ We'll use the generic wrangled data file, "exp_lt_avg.csv".
 project_path <- getwd()
 exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 data <- read.csv(file.path(project_path, "res", paste(paste(exp, "avg", sep = "_"), ".csv", sep = "")))
+data <- data %>% rename(complete_first = full_transfer_first)
 ```
 
 Make sure that the key variables are formatted as factors, ready for ANOVAs.
@@ -35,14 +50,14 @@ training_data <- data %>%
          setting_errors, general_errors) %>% 
   mutate(train_type = train_type-1) %>% 
   mutate(sub = factor(sub), 
-         train_type = factor(train_type), 
          train_type = case_when(train_type==0~"low",train_type==1~"high"),
-         switch = factor(switch), 
-         switch = case_when(switch==0~"stay",switch==1~"switch"))
+         train_type = factor(train_type), 
+         switch = case_when(switch==0~"stay",switch==1~"switch"),
+         switch = factor(switch))
 
 test_data <- data %>% 
   filter(ses==3,switch==0) %>% 
-  select(sub, train_type, transfer, full_transfer_first, accuracy, learned_setting_errors)
+  select(sub, train_type, transfer, complete_first, accuracy, learned_setting_errors)
 test_data$general_errors <- 1 - test_data$accuracy - test_data$learned_setting_errors
 
 tmp <- data %>% filter(ses == 2 & switch == 0) %>% 
@@ -51,7 +66,8 @@ tmp <- data %>% filter(ses == 2 & switch == 0) %>%
   summarise(mu_tp = mean(transition_probabilities))
 test_data <- inner_join(test_data, tmp, by="sub")
 
-k4_data <- read_csv(file.path(project_path, "res", paste(paste(exp, "maggi-k4", sep = "_"), ".csv", sep = "")), show_col_types = FALSE)
+k4_data <- read_csv(file.path(project_path, "res", paste(paste(exp, "maggi-k4", sep = "_"), 
+               ".csv", sep = "")), show_col_types = FALSE)
 k4_data <- k4_data %>% 
   filter(ses==3) %>% 
   select(sid, transfer, nclicks, k4_onset) %>% 
@@ -61,12 +77,12 @@ test_data <- inner_join(test_data, k4_data, by=c("sub","transfer"))
 test_data <- test_data %>% 
   mutate(train_type = train_type-1) %>% 
   mutate(sub = factor(sub), 
-         train_type = factor(train_type), 
          train_type = case_when(train_type==0~"low",train_type==1~"high"),
-         transfer = factor(transfer), 
+         train_type = factor(train_type), 
          transfer = case_when(transfer==1~"complete",transfer==2~"partial"),
-         full_transfer_first = factor(full_transfer_first),
-         full_transfer_first = case_when(full_transfer_first==0~"pf",full_transfer_first==1~"cf"))
+         transfer = factor(transfer), 
+         complete_first = case_when(complete_first==0~"pf",complete_first==1~"cf"),
+         complete_first = factor(complete_first))
 ```
 
 # Train phase
@@ -78,7 +94,8 @@ Test whether experiencing a low or high rate of context switches during training
 ### ANOVA
 
 ```{r}
-training_results <- aov_ez("sub", "general_errors", training_data, within = "switch", between = c("train_type"), fun_aggregate = mean)
+training_results <- aov_ez("sub", "general_errors", training_data, within = "switch", 
+                           between = c("train_type"), fun_aggregate = mean)
 summary(training_results)
 ```
 
@@ -86,9 +103,8 @@ summary(training_results)
 
 ```{r}
 sum_emm_int <- emmeans(training_results, c("train_type", "switch")) #get est. marginal means
-switch_effect <- c(-1, -1, 1, 1) #make a vector comparing switch vs stay trials
-main_effect_contrasts <- (list(switch_effect))
-contrast(sum_emm_int, main_effect_contrasts) #perform contrasts analyses for main effects
+switch_effect <- list(c(-1, -1, 1, 1)) #make a vector comparing switch vs stay trials
+contrast(sum_emm_int, switch_effect) #perform contrasts analyses for main effects
 ```
 
 ### Descriptive statistics
@@ -107,7 +123,8 @@ Test whether experiencing a high or low rate of context switches during training
 ### ANOVA
 
 ```{r}
-training_results <- aov_ez("sub","context_changes", training_data, within = "switch", between = c("train_type"), fun_aggregate = mean)
+training_results <- aov_ez("sub","context_changes", training_data, within = "switch", 
+                           between = c("train_type"), fun_aggregate = mean)
 summary(training_results)
 ```
 
@@ -148,8 +165,9 @@ Are people in the low or high context switching training group more accurate on 
 ### ANOVA
 
 ```{r}
-test_results <- aov_ez("sub", "accuracy", test_data, within = "transfer", between = c("train_type", "full_transfer_first"))
-summary(test_results)
+test_results <- aov_ez("sub", "accuracy", test_data, within = "transfer", 
+                       between = c("train_type", "complete_first"))
+print(summary(test_results))
 ```
 
 ### Contrasts
@@ -180,7 +198,7 @@ contrast(sum_emm_int, simple_effect_contrasts) #contrasts analyses for simple ef
 ```{r}
 #   variance
 test_data %>% 
-  group_by(train_type, transfer, full_transfer_first) %>% 
+  group_by(train_type, transfer, complete_first) %>% 
   summarise(variance = var(accuracy)) 
 #   mean and sd
 test_data %>% 
@@ -196,11 +214,14 @@ Do people revert to clicking on doors that belonged to a house during training, 
 ### ANOVA
 
 ```{r}
-test_results <- aov_ez("sub", "accuracy", test_data, within = "transfer", between = c("train_type", "full_transfer_first"))
+test_results <- aov_ez("sub", "learned_setting_errors", test_data, within = "transfer", 
+                       between = c("train_type", "complete_first"))
 summary(test_results)
 ```
 
-We don't run contrasts here, because the omnibus test does reach significance.
+### Contrasts
+
+We don't run contrasts here, because the omnibus test doesn't reach significance.
 
 ### Descriptive statistics
 
@@ -218,11 +239,42 @@ Do people who have experienced low or high rates of context switching during tra
 ### ANOVA
 
 ```{r}
-test_results <- aov_ez("sub", "general_errors", test_data, within = "transfer", between = c("train_type", "full_transfer_first"))
+test_results <- aov_ez("sub", "general_errors", test_data, within = "transfer", 
+                       between = c("train_type", "complete_first"))
 summary(test_results)
+```
 
-test_results <- ezANOVA(data=test_data, dv=general_errors, wid=sub, within=transfer, between=.(train_type, full_transfer_first))
-test_results
+### Contrasts
+
+```{r}
+#   interaction
+sum_emm_int <- emmeans(test_results, c("train_type", "transfer"))
+transfer_effect <- c(1, 1, -1, -1) #vector comparing complete vs partial transfer
+group_effect <- c(1, -1, 1, -1) #vector comparing low switch vs high switch
+interaction_effects<-transfer_effect * group_effect #multiply vectors
+contrast(sum_emm_int, list(interaction_effects)) #perform contrasts analyses
+#   simple effects
+low_switch_transfer_effect <- c(0, 1, 0, -1) #comparing accuracies for low-switch only
+high_switch_transfer_effect <- c(1, 0, -1, 0) #comparing accuracies for high-switch only
+complete_transfer_effect <- c(1, -1, 0, 0) # comparing between groups on stay trials
+partial_transfer_effect <- c(0, 0, 1, -1) # comparing  between groups on sitch trials
+simple_effect_contrasts <- list(low_switch_transfer_effect, 
+                                high_switch_transfer_effect,
+                                complete_transfer_effect,
+                                partial_transfer_effect
+)
+contrast(sum_emm_int, simple_effect_contrasts) #contrasts analyses for simple effects
+```
+
+### Descriptive statistics
+
+```{r}
+#   mean and sd
+test_data %>% 
+  group_by(train_type, transfer) %>% 
+  summarise(mean = mean(general_errors),
+            sd = sd(general_errors),
+            variance = var(general_errors))
 ```
 
 ## Transition probabilities
@@ -247,14 +299,15 @@ We have modelled participants' clicks to estimate when during the test phase the
 First, exclude the people who never demonstrated that they knew all four doors, and print the new n.
 
 ```{r}
-test_data <- test_data %>% filter(k4_onset != Inf)
-length(unique(test_data$sub))
+test_data_k4 <- test_data %>% filter(k4_onset != Inf)
+length(unique(test_data_k4$sub))
 ```
 
 ### ANOVA
 
 ```{r}
-test_results <- aov_ez("sub", "k4_onset", test_data, within = "transfer", between = c("train_type", "full_transfer_first"))
+test_results <- aov_ez("sub", "k4_onset", test_data_k4, within = "transfer", 
+                       between = c("train_type", "complete_first"))
 summary(test_results)
 ```
 
@@ -268,11 +321,11 @@ group_effect <- c(1, -1, 1, -1) #vector comparing low switch vs high switch
 interaction_effects<-transfer_effect * group_effect #multiply vectors
 contrast(sum_emm_int, list(interaction_effects)) #perform contrasts analyses
 #   simple effects
-low_switch_transfer_effect <- c(0, 1, 0, -1) #comparing accuracie for low-switch only
-high_switch_transfer_effect <- c(1, 0, -1, 0) #comparing accuracies for high-switch only
-complete_transfer_effect <- c(1, -1, 0, 0) # comparing between groups on stay trials
-partial_transfer_effect <- c(0, 0, 1, -1) # comparing  between groups on sitch trials
-eimple_effect_contrasts <- list(low_switch_transfer_effect, #simple effects
+low_switch_transfer_effect <- c(0, 1, 0, -1) 
+high_switch_transfer_effect <- c(1, 0, -1, 0) 
+complete_transfer_effect <- c(1, -1, 0, 0) 
+partial_transfer_effect <- c(0, 0, 1, -1) 
+simple_effect_contrasts <- list(low_switch_transfer_effect, #simple effects
                                 high_switch_transfer_effect,
                                 complete_transfer_effect,
                                 partial_transfer_effect
@@ -284,8 +337,9 @@ contrast(sum_emm_int, simple_effect_contrasts) #contrasts analyses for simple ef
 
 ```{r}
 #   mean and sd
-test_means <- test_data %>% 
+test_means <- test_data_k4 %>% 
   group_by(train_type, transfer) %>% 
   summarise(mean_k4 = mean(k4_onset),
             sd = sd(k4_onset))
+test_means
 ```
