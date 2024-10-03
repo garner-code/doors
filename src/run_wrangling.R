@@ -17,7 +17,7 @@ source(file.path("src","get_learned_doors.R"))
 # !you will want to update these settings a lot during piloting, when the task code or the way you
 # test changes, or when you test participants on different subsets of the task phases
 version <- "study-01" # pilot-data-00 (train and test), pilot-data-01 (learn and train), pilot-data-02 (learn and train, learn phase split into two parts)
-exp <- "exp_lt" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
+exp <- "exp_ts" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
 sess <- c("ses-learn","ses-train","ses-test") # session: 'ses-learn','ses-train','ses-test'. can select one (e.g. ses <- c('ses-learn')) or multiple (e.g. ses <- c('ses-train','ses-test'))
 
 ### paths
