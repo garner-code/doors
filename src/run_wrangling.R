@@ -124,6 +124,17 @@ rt <- grp_data %>%
 res$rt <- rt$rt
 res$win <- 4-res$n_clicks >= 0
 
+# make sure we can select just the first-click-correct trials to calculate avg rt over trials
+res$first_click_correct <- grp_data %>% 
+  mutate(diff_cc = diff(c(1,door_cc))) %>% 
+  mutate(diff_t = diff(c(0,t))) %>% 
+  mutate(first_click_correct = case_when(diff_cc == 0 & diff_t == 1 ~ 1, .default = 0)) %>% 
+  group_by(sub, ses, subses, t, context, train_type, transfer, full_transfer_first, original_house) %>%
+  summarise(first_click_correct = first_click_correct[1]) %>% 
+  pull(first_click_correct)
+res <- res %>% 
+  mutate(rt_correct = case_when(first_click_correct == 1 ~ rt))
+
 # trim RTs
 if (exp=="exp_ts"){
   res <- res %>% filter(rt<=10) %>% ungroup() %>% group_by(ses,context,switch) %>% filter(rt<=(mean(rt)+(3*sd(rt))))
@@ -131,12 +142,14 @@ if (exp=="exp_ts"){
 
 fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)
-
+  
 # by subject
 #   grouping by subsession
 res <- res %>%
+  ungroup() %>% 
   group_by(sub, ses, subses, context, switch, train_type, transfer, full_transfer_first, original_house) %>%
-  summarise_all(mean)
+  summarise(across(everything(), \(x) mean(x, na.rm = TRUE) )) %>% 
+  select(!first_click_correct)
 res <- res %>% ungroup() %>% mutate(transition_probabilities = c(kronecker(matrix(1, nrow(res), 1), NA)))
 if(exp=="exp_lt"){
   res$transition_probabilities[which(res$ses==2)] <- get_transition_probabilities(grp_data)
@@ -148,7 +161,8 @@ write_csv(res, fnl)
 #   just grouping by session
 res <- res %>%
   group_by(sub, ses, context, switch, train_type, transfer, full_transfer_first, original_house) %>%
-  summarise_all(mean)
+  summarise(across(everything(), \(x) mean(x, na.rm = TRUE) )) %>% 
+  select(!first_click_correct)
 res <- res %>% ungroup() %>% mutate(transition_probabilities = c(kronecker(matrix(1, nrow(res), 1), NA)))
 if(exp=="exp_lt"){
   res$transition_probabilities[which(res$ses==2)] <- get_transition_probabilities(grp_data)
