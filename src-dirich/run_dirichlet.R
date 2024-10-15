@@ -22,6 +22,7 @@ data <- read.csv(fnl)
 # loop through participants and contexts
 routineness <- data.frame()
 for (sid in unique(data$sub)){
+  print(sprintf('subject %d', sid))
   for (ctx in unique(data$context)){
     # get their train phase data, context-correct stay trial clicks only
     clicks <- data %>% filter(sub==sid,ses==2,context==ctx,door_cc==1,switch==0)

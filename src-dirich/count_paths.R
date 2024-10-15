@@ -42,7 +42,8 @@ count_paths <- function(clicks){
       click <- click+1
     }
   }
-  
+  print(sprintf('lost clicks: %.0f/%0.f', (click/4-sum(counts))*4, click))
+
   counts <- data.frame(counts)
   counts$r <- paste("r", 1:nrow(counts), sep="")
   return(counts)
