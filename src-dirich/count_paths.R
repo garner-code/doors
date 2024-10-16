@@ -1,16 +1,28 @@
-count_paths <- function(clicks){
+count_paths <- function(clicks, start_point = "fixed"){
   
   # define the six possible paths, assuming that people loop, so we can ignore start point
   routines <- list(c(1,2,3,4),c(1,2,4,3),c(1,3,2,4),c(1,3,4,2),c(1,4,2,3),c(1,4,3,2))
   
-  #find their context-correct doors, and re-name them [1 2 3 4]
+  # find their context-correct doors, and re-name them [1 2 3 4]
   doors <- clicks %>% pull(door) %>% unique
-  a <- c(doors[!is.na(match(doors,c(1,2,5,6)))],
-         doors[!is.na(match(doors,c(9,10,13,14)))],
-         doors[!is.na(match(doors,c(11,12,15,16)))],
-         doors[!is.na(match(doors,c(3,4,7,8)))])
-  clicks <- clicks %>% mutate(door_id = case_when(door==a[1]~1,door==a[2]~2,door==a[3]~3,door==a[4]~4))
   
+  # opt 1: assume that everyone starts in the top left of the grid
+  if(start_point=="fixed"){
+    a <- c(doors[!is.na(match(doors,c(1,2,5,6)))],
+           doors[!is.na(match(doors,c(9,10,13,14)))],
+           doors[!is.na(match(doors,c(11,12,15,16)))],
+           doors[!is.na(match(doors,c(3,4,7,8)))])
+  }else if(start_point=="favourite"){
+    # opt 2: let them start in their favourite spot
+    favourite <- clicks %>% 
+      mutate(t_diff = diff(c(0,t))) %>% 
+      filter(t_diff == 1, door_cc == 1) %>% 
+      pull(door) %>% 
+      Mode
+    a <- c(doors[!is.na(match(doors,favourite))], doors[is.na(match(doors,favourite))])
+  }
+  clicks <- clicks %>% mutate(door_id = case_when(door==a[1]~1,door==a[2]~2,door==a[3]~3,door==a[4]~4))
+
   # through a sliding window of four unique clicks, count which of these it maps onto
   counts <- matrix(0,length(routines))
   click <- 1
@@ -42,7 +54,6 @@ count_paths <- function(clicks){
       click <- click+1
     }
   }
-  print(sprintf('lost clicks: %.0f/%0.f', (click/4-sum(counts))*4, click))
 
   counts <- data.frame(counts)
   counts$r <- paste("r", 1:nrow(counts), sep="")
