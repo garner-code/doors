@@ -2,14 +2,49 @@ count_stereo <- function(exp, data, opt, graph) {
   utils::globalVariables(".data")
 
   ### insensitive to feedback?  count re-clicks on previous context doors on switch trials
-  events <- data %>%
-    filter(switch == 1, door_oc == 1)
-  reclicks <- events %>%
-    group_by(sub, ses, t, context) %>%
-    summarise(n = n(), n_reclicks = n() - length(unique(door)))
-  reclicks <- reclicks %>%
-    group_by(sub, ses, context) %>%
-    summarise(clicks = mean(n), reclicks = mean(n_reclicks))
+  #events <- data %>%
+  #  filter(switch == 1, door_oc == 1)
+  #reclicks <- events %>%
+  #  group_by(sub, ses, t, context) %>%
+  #  summarise(n = n(), n_reclicks = n() - length(unique(door)))
+  #reclicks <- reclicks %>%
+  #  group_by(sub, ses, context) %>%
+  #  summarise(clicks = mean(n), reclicks = mean(n_reclicks))
+  
+  tmp <- data %>% filter(switch == 1)
+  reclicks <- data.frame()
+  doors <- list()
+  for(s in unique(tmp$sub)){
+    doors[[1]] <- unique(tmp %>% filter(sub==s, context==2, door_cc==1) %>% pull(door))
+    doors[[2]] <- unique(tmp %>% filter(sub==s, context==1, door_cc==1) %>% pull(door))
+    for(ctx in unique(tmp$context)){
+      
+      for (trial in unique(tmp %>% filter(sub==s, context==ctx) %>% pull(t))){
+        x <- tmp %>% filter(sub==s, context==ctx, t==trial)
+        
+        used <- rep(FALSE, 4)
+        reclick_count <- 0
+        out <- FALSE
+        while(!out){
+          for(click in 1:nrow(x)){
+            if(x$door[click] %in% doors[[ctx]]){
+              
+              if(!all(used)){
+                used[match(x$door[click],doors[[ctx]])] <- TRUE
+              }else{
+                reclick_count <- reclick_count+1
+              }
+              
+            } else{
+              out <- TRUE #they have left the previous trial's context
+            }
+          }
+        }
+        
+        reclicks <- rbind(reclicks, data.frame(sub=s, t=trial, context=ctx, reclicks = reclick_count))
+      }
+    }
+  }
 
   ### accurate?  count accuracy on stay trials
   events <- data %>%
@@ -129,11 +164,13 @@ count_stereo <- function(exp, data, opt, graph) {
   t <- transitions_accuracy %>%
     ungroup() %>%
     select(accuracy, metatask_accuracy, transition_counts, transition_weights, entropy)
-  r <- reclicks %>%
-    ungroup() %>%
-    select(clicks, reclicks)
   
-  stereo <- bind_cols(path_match, t, r)
+  reclicks <- reclicks %>%
+    group_by(sub, context) %>%
+    summarise(reclicks = mean(na.omit(reclicks)))
+  
+  stereo <- bind_cols(path_match, t)
+  stereo <- inner_join(stereo, reclicks, by = c("sub", "context"))
 
   return(stereo)
 }

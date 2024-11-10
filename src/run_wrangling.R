@@ -115,7 +115,15 @@ res <- grp_data %>%
     setting_errors = n_oc / n_clicks,
     general_errors = n_nc / n_clicks,
     learned_setting_errors = n_lc / n_clicks
-  )
+)
+
+# re-label exp_lt test phase "switch" trials as stay trials
+if (exp == "exp_lt"){
+  res <- res %>% 
+    mutate(switch = case_when(switch==1 & ses==3 ~ 0, .default = switch))
+}
+
+# calculate context change rates
 res$context_changes[intersect(which(res$switch==1),which(res$ses==2))] <- res$context_changes[intersect(which(res$switch==1),which(res$ses==2))]-1
 rt <- grp_data %>%
   group_by(sub, ses, subses, t, context, train_type, transfer) %>%
@@ -142,21 +150,21 @@ if (exp=="exp_ts"){
 
 fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
 write_csv(res, fnl)
-  
+
 # by subject
 #   grouping by subsession
-res <- res %>%
+res_ss <- res %>%
   ungroup() %>% 
   group_by(sub, ses, subses, context, switch, train_type, transfer, full_transfer_first, original_house) %>%
   summarise(across(everything(), \(x) mean(x, na.rm = TRUE) )) %>% 
   select(!first_click_correct)
-res <- res %>% ungroup() %>% mutate(transition_probabilities = c(kronecker(matrix(1, nrow(res), 1), NA)))
+res_ss <- res_ss %>% ungroup() %>% mutate(transition_probabilities = c(kronecker(matrix(1, nrow(res_ss), 1), NA)))
 if(exp=="exp_lt"){
-  res$transition_probabilities[which(res$ses==2)] <- get_transition_probabilities(grp_data)
+  res_ss$transition_probabilities[which(res_ss$ses==2)] <- get_transition_probabilities(grp_data)
 }
-res <- res %>% select(!t)
+res_ss <- res_ss %>% select(!t)
 fnl <- file.path(project_path, "res", paste(paste(exp, "avg-ss", sep = "_"), ".csv", sep = ""))
-write_csv(res, fnl)
+write_csv(res_ss, fnl)
 
 #   just grouping by session
 res <- res %>%

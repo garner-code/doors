@@ -1,6 +1,6 @@
 ## The Study
 
-In this study, we examined the effect of contextual clarity on task switching and learning transfer with a visual search task. This study contains two experiments: one measuring performance on task switching performance (exp_ts) and the other measuring learning transfer (exp_lt). The *transfer* variable in the dataset is not applicable to exp_ts.
+In this study, we examined the effect of contextual clarity on task switching and learning transfer with a visual search task. This study contains two experiments: one measuring performance on task switching (exp_ts) and the other measuring learning transfer (exp_lt). The *transfer* variable in the dataset is not applicable to exp_ts.
 
 The repository holds analysis code in R for human behavioural data. 
 
@@ -18,7 +18,7 @@ Christopher Nolan
 
 ### Task
 
-Participants searched for target animals hiding in houses which contained 16 rooms. A house was represented by a 4 x 4 grid of squares, and animals were limited to appear behind one of 4 squares in each house.
+Participants searched for target animals hiding in houses which contained 16 rooms. A house was represented by a 4 x 4 grid of squares, and animals could appear behind one of 4 squares in each house.
 
 ### Data
 
@@ -112,9 +112,9 @@ We used response time as a measure of task switching performance. It provides an
 
 Win identifies the trials where the number of door selections were 4 or less.
 
-TRUE = when number of door selections on a given trial was less than, or equal to 4.
+TRUE: when number of door selections on a given trial was less than or equal to 4.
 
-FALSE - when number of selections on a given trial was greater than 4.
+FALSE: when number of selections on a given trial was greater than 4.
 
 We used this variable to calculate the number of points earned in the training stage of the experiment. Participants were awarded points when the target animal was found within 4 moves.
 
@@ -205,4 +205,4 @@ Adjust the 'summary' steps in run_wrangling.R. These commands (e.g. `res <- grp_
 
 You can also filter the data before you do your summaries. For example, if you want to discard switch trials all together, you can add `res -> res %>% filter(switch==0)` after getting the results by trial, but before getting the results by subject. Filtering keeps only the rows that you've specified. In this example, it would keep rows on which there was no switch, which are marked as 0 in the data frame. 
 
-You can try any and all these things just to see what happens. You can save the results to a file (click on the respective `write_csv(res,fnl)` and press CMD+Enter) and view them in Excel, or just run the thing you want to try (select only that text and press CMD+Enter) and view the res variable by clicking on it in the Environment (top right of your RStudio page). You can always go back to the code on GitHub if you don't like your modifications!
+You can try any and all of these things just to see what happens. You can save the results to a file (click on the respective `write_csv(res,fnl)` and press CMD+Enter) and view them in Excel, or just run the thing you want to try (select only that text and press CMD+Enter) and view the res variable by clicking on it in the Environment (top right of your RStudio page). You can always go back to the code on GitHub if you don't like your modifications!
