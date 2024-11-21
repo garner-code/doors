@@ -106,7 +106,7 @@ get_data <- function(data_path, exp, sub, ses, train_type, train_doors) {
       mutate(off = case_when(!is.na(off) ~ off, is.na(off) ~ c(on[2:length(on)], NA), .default = NA)) # if two onsets occured back-to-back, use the second onset as the first offset
     trials <- unique(resps$t)
     resps <- resps %>%
-      mutate(subses = case_when(t %in% trials[1:round(length(trials) / 2)] ~ 1, .default = 2))
+      mutate(subses = case_when(t %in% trials[1:round(length(trials) / 2)] ~ 1, .default = 2), .after=ses)
 
     ### code door by whether it's part of current context, other context, or no context
     doors <- resps %>%
@@ -118,11 +118,10 @@ get_data <- function(data_path, exp, sub, ses, train_type, train_doors) {
       tmp[[i]] <- resps %>%
         filter(context == i) %>%
         mutate(door_oc = case_when((!(door %in% filter(doors, context == i)$door) & door %in%
-          doors$door) ~ 1, .default = 0))
+          doors$door) ~ 1, .default = 0),.after=door_cc)
     }
     resps <- rbind(tmp[[1]], tmp[[2]]) %>%
       arrange(t)
-
 
     ### format events
     resps <- resps %>% select(!c(onset, door_p:y)) # remove unnecessary variables

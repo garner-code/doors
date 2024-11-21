@@ -92,6 +92,10 @@ Number of context-relevant door selections: those which are relevant to finding 
 
 Number of context-irrelevant door selections: those which are relevant to finding the animal in the other house, which was not being shown on the current trial.
 
+**n_lc: number of learned-context correct clicks**
+
+Number of clicks on doors that have been relevant during the learn and train phase, but do not belong to the current or other context in the test phase. This is only relevant for the test phase of exp_lt.
+
 **accuracy**
 
 Accuracy is the number of context-relevant door selections relative to the total number of door selections on a single trial. Values for this variable were calculated using the formula n_cc/n_clicks.
@@ -114,11 +118,27 @@ FALSE - when number of selections on a given trial was greater than 4.
 
 We used this variable to calculate the number of points earned in the training stage of the experiment. Participants were awarded points when the target animal was found within 4 moves.
 
+**general_errors**
+
+This is the number of clicks on doors that are irrelevant to both contexts, divided by the total number of clicks.
+
 **setting_errors**
 
 Setting errors is the proportion of door selections which are not relevant to the current context, but are relevant to the other learning context, on a given trial. Setting errors are calculated using n_oc/n_clicks.
 
 We used this variable to determine when participants were confusing the target doors for each house i.e., when participants were using target doors for the wrong context.
+
+**learned_setting_errors**
+
+Like setting_errors, this tracks whether clicks on doors that are not relevant to the current context may be relevant to other contexts. Where setting_errors counts how many clicks fall on doors that are relevant for the other context used within the phase, learned_setting_errors counts how many context-incorrect clicks in the test phase of exp_lt fall on doors that were relevant at some point during the train phase. It includes all doors that were relevant at some point during the train phase and are not currently relevant, making it more generous that door_oc for exp_lt and identical to door_oc for exp_ts.
+
+**context_changes**
+
+This tracks how many times people shift between the currently relevant, currently irrelevant, and never relevant sets of doors. We assume that they start in the correct context for the previous trial, so that the first click in the other context (or on a never-relevant door) is a context change. This disadvantages uncued trials in the train phase on which the true context changes, so we subtract one from the context change score on those trials. 
+
+**transition_probabilities**
+
+In exp_lt, two doors from each of the train phase contexts are recycled to create the test phase partial transfer four-door set. If grouped those doors during the train phase, that could help them draw on their train phase knowledge during partial transfer. For each one of the transferred doors in a given train phase context, we take the number of times that the other transferred door was clicked before it, divided by the total number of transitions from context-relevant doors. The mean is the transition probability between transferred doors for that train phase context.
 
 ## The Code
 
