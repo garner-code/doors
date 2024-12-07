@@ -1,0 +1,208 @@
+---
+title: "Testing routine-ness in the doors task"
+format:
+  html:
+    code-fold: true
+editor: visual
+---
+
+```{r, echo=FALSE, message=FALSE}
+# get set up
+rm(list=ls())
+set.seed(42)
+library(tidyverse)
+```
+
+The goal is to develop a metric that quantifies how routine people are on the door task, during the stay trials of the practice phase. Here, we define 'routine' as the consistent ordering of responses over trials. We want this measure to:
+
+i\) be rank ordering - we agree that the metric quantifies the strength of what we consider to be a routine
+
+ii\) be testable against chance
+
+## Simulating people
+
+Lets assume people are choosing from 16 doors and that the doors they should choose are 1, 2, 3, & 4. Lets also assume that the doors from the other task are 5, 6, 7, 8.
+
+Below are some hypothetical routines that people could perform over trials. I have listed them in order of how 'routine' I think they are, regardless of how accurate they are.
+
+The reasoning I have used to order people is a) are they doing something consistent over trials? b) consistently doing things fewer ways is more 'routiney' than consistently doing things multiple ways. This latter criteria essentially amounts to the fewer ways you enter or leave each door (state), the more routine you are.
+
+**Most routine**
+
+Note - these people should all score comparably:
+
+**Person 1:** {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}
+
+**P2:** {1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
+
+**P3:** {1, 2, 3, 4, 5, 6, 7 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7 8, 9, 10, 11, 12, 13, 14, 15, 16}
+
+**Now going down in routine strength**
+
+**P4:** {1, 2, 1, 2, 3, 4, 1, 2, 1, 2, 3, 4, 1, 2, 1, 2, 3, 4} (enter state 1 two ways)
+
+**Some comparable routines, given trade offs between number of states that are entered in different ways and the number of ways you can enter them**
+
+**P5:** {1, 2, 1, 3, 1, 4, 1, 2, 1, 3, 1, 4, 1, 2, 1, 3} (enter state 1 three ways)
+
+**P6:** {1, 2, 1, 3, 2, 4, 1, 2, 1, 3, 2, 4} (enter states 1 & 2, two ways)
+
+**P7:** {1, 2, 3, 4, 3, 2, 1, 2, 3, 4, 3, 2, 1, 2, 3, 4, 3, 2} (enter states 3, 2, by 2 ways)
+
+**P8:** {1, 2, 3, 5, 4, 1, 2, 3, 6, 4, 1, 2, 3, 7, 4, 1, 2, 3, 8, 4} (enter state 4 by 4 different ways, from random-ish places)
+
+**Add some slightly random behaviour, this person should be the least routine**
+
+**P9:** {1, 2, 3, 5, 4, 1, 2, 3, 6, 4, 1, 2, 3, 7, 4, 1, 2, 3, 8, 4, 1, 2, 3, 15, 4} (enter state 4 by 5 different ways, from random-ish places)
+
+## Using transition counts as a basis for a measure of routine
+
+The idea is that for each of these individuals, we can generate a matrix of each person's transition counts. The rows of the matrix code the state that is being left, and the columns are where the person is going to. If we then normalise the rows (i.e. divide each count by the row total) we get $p(\mathrm{state}_{t+1} | \mathrm{state}_t)$ for each state.
+
+Unfold the code box to see some functions that will generate sequences for each person, and then convert the results into the matrices we seek.
+
+```{r}
+
+generate_data <- function(base_sequence, n){
+  rep(base_sequence, times=round(n/length(base_sequence)))
+}
+
+data_2_counts_matrix <- function(data, n_doors){
+  mat <- matrix(rep(0, times=n_doors*n_doors), nrow=n_doors, ncol=n_doors)
+  idxs <- matrix(c(data[1:length(data)-1], data[2:length(data)]), nrow=2, byrow=TRUE)
+  for(i in 1:ncol(idxs)){
+    mat[idxs[1,i],idxs[2,i]] <- mat[idxs[1,i],idxs[2,i]] + 1
+  }
+  mat
+}
+
+p_st1_gs <- function(counts_matrix, n_doors){
+  denom <- matrix(rep(rowSums(counts_matrix), n_doors), nrow=n_doors, byrow=FALSE)
+  out <- counts_matrix / denom
+  out[is.na(out)] = 0
+  out
+}
+
+generate_data_for_one_person <- function(base_sequence, n, n_doors){
+  sequence_out <- generate_data(base_sequence, n)
+  counts_matrix <- data_2_counts_matrix(sequence_out, n_doors)
+  prob_mat <- p_st1_gs(counts_matrix, n_doors)
+  prob_mat
+}
+```
+
+Now I will generate the matrices for each person's data from above.
+
+```{r}
+
+peeps <- list( P1 = c(1, 2, 3, 4), 
+               P2 = c(1, 2, 3, 4, 5, 6, 7, 8),
+               P3 = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16),
+               P4 = c(1, 2, 1, 2, 3, 4, 1, 2, 1, 2, 3, 4, 1, 2, 1, 2, 3, 4),
+               P5 = c(1, 2, 1, 3, 1, 4, 1, 2, 1, 3, 1, 4, 1, 2, 1, 3),
+               P6 = c(1, 2, 1, 3, 2, 4,  1, 2, 1, 3, 2, 4),
+               P7 = c(1, 2, 3, 4, 3, 2, 1, 2, 3, 4, 3, 2, 1, 2, 3, 4, 3, 2),
+               P8 = c(1, 2, 3, 5, 4, 1, 2, 3, 6, 4, 1, 2, 3, 7, 4, 1, 2, 3, 8, 4),
+               P9 = c(1, 2, 3, 5, 4, 1, 2, 3, 6, 4, 1, 2, 3, 7, 4, 1, 2, 3, 8, 4, 1, 2, 3, 15, 4))
+outputs <- lapply(peeps, generate_data_for_one_person, n = 360, n_doors = 16)
+
+```
+
+Lets plot each persons matrix, so we can make sure we got the functions correct.
+
+```{r, message=FALSE}
+
+ps <- lapply(outputs, heatmap, Colv = NA, Rowv = NA, scale="none")
+```
+
+### Summarising the matrices to get a measure of routine strength
+
+We need to capture the data into a single metric, that orders people in terms of how routine they are.
+
+The rows of our matrices reflect $p(\mathrm{state}_{t+1}|\mathrm{state}_{t})$. Therefore, if we calculate the entropy over rows, we get a value that tells us, for each state that you have been in, how many ways did you leave that state. The fewer places you went to from that state, the lower your entropy be will be.
+
+Here is a quick function that will give us the Shannon entropy over the rows of the matrix
+
+```{r}
+
+H <- function(x){
+  -sum(x * log(x), na.rm = TRUE)
+}
+```
+
+We can apply this over the rows of each matrix for each person, to get a set of entropy scores for them, respective to each state they were in
+
+```{r}
+
+state_entropies <- do.call(rbind, lapply(outputs, function(x) apply(x, 1, H)))
+knitr::kable(state_entropies)
+
+```
+
+This is pretty nice so far. All the deterministic subjects get the same score, and the ranking of the other participants is tracking pretty well. Now I will sum the entropy for each participant because H(X,Y) = H(X) + H(Y).
+
+```{r}
+
+p_dat <- apply(state_entropies, 1, sum)
+knitr::kable(p_dat, col.names = c("sub", "H"))
+```
+
+Looking at the heatmaps and the entropy scores, I can see that they are ordering 'people' how we would want, given the definition of routine above.
+
+Okies, this is looking promising. Now I want to do a couple of sanity checks. First, lets check how these measures hold up over varying numbers of door selections. The calculations should be invariant to this, as long as you are repeating, but I just want to check.
+
+### The impact of how many door selections you made
+
+The quickest and easiest way to test this is to just double the length of door selections made by each person, and cross-reference between lengths to check that people are still ordered the same.
+
+```{r}
+
+doubles <- lapply(peeps, generate_data_for_one_person, n = 360*2, n_doors = 16)
+doubles <- apply(do.call(rbind, lapply(doubles, function(x) apply(x, 1, H))), 1, sum)
+knitr::kable(doubles, col.names = c("sub", "H"))
+```
+
+That sanity check worked. The next thing I want to know is how this all holds up if we add some random noise. Aka we should be able to add the same amount of random noise, and keep the ordering with the entropy measure.
+
+### The impact of noise
+
+To assess the impact of noise, I am going to set everyone's epsilon to 10%. This means that 10% of their responses will be randomly drawn from their total set of responses. I would expect people to maintain the ranking of entropy scores, but not the entropy scores themselves.
+
+```{r}
+
+sequences_for_noise <- lapply(peeps, generate_data, n = 320) # approximates the number of responses per session
+
+add_noise_to_a_sequence <- function(a_sequence, n_doors, epsilon = .1){
+  idxs <- 1:length(a_sequence)
+  n_sample <- round(length(idxs) * epsilon)
+  noise_idx <- sample(idxs, size=n_sample)
+  a_sequence[noise_idx] <- sample(unique(a_sequence), size=n_sample, replace=TRUE)
+  a_sequence
+}
+
+sub_sequences_w_noise <- lapply(sequences_for_noise, add_noise_to_a_sequence, n_doors = 16)
+count_mats <- lapply(sub_sequences_w_noise, data_2_counts_matrix, n_doors = 16)
+prob_mats_w_noise <- lapply(count_mats, p_st1_gs, n_doors = 16)
+```
+
+Lets quickly look at these matrices, to see what we're quantifying.
+
+```{r, message=FALSE}
+
+noise_ps <- lapply(prob_mats_w_noise, heatmap, Colv = NA, Rowv = NA, scale="none")
+```
+
+Now lets compute the entropy measure:
+
+```{r}
+noisies <- apply(do.call(rbind, lapply(prob_mats_w_noise, function(x) apply(x, 1, H))), 1, sum)
+knitr::kable(noisies, col.names = c("sub", "H"))
+```
+
+Ok, so the news is not perfect but is kind of good - it does show that if people are lost and routinely hitting all the doors, we're particularly vulnerable to disrupting the rank ordering under conditions of random noise. So, perhaps we should only apply the measure to people who have not lost the task (indeed the accuracy in our task is high, but we could have a cut-off on general errors?).
+
+### Summary
+
+This seems like not a bad definition and measurement of routines to me. From this perspective, you are more routine if you enter states consistently. If you enter a state from multiple preceding states, or you vary in how you enter multiple states you are quantified as less routine.
+
+I have an idea on how to permute null matrices for a statistical test against chance, but will only get onto that if nobody thinks that this part is a terrible idea.
