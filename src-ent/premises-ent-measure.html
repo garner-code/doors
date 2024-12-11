@@ -543,7 +543,53 @@ window.Quarto = {
 </div>
 </div>
 <p>Looking at the heatmaps and the entropy scores, I can see that they are ordering ‘people’ how we would want, given the definition of routine above.</p>
-<p>Okies, this is looking promising. Now I want to do a couple of sanity checks. First, lets check how these measures hold up over varying numbers of door selections. The calculations should be invariant to this, as long as you are repeating, but I just want to check.</p>
+<p>Okies, this is looking promising. Now I want to do a couple of sanity checks. First, lets define the equation and think about its implications. Then I’ll check how these measures hold up over varying numbers of door selections. The calculations should be invariant to this, as long as you are repeating, but I just want to check.</p>
+</section>
+<section id="routine---a-definition" class="level3">
+<h3 class="anchored" data-anchor-id="routine---a-definition">Routine - a definition</h3>
+<p>Now that we are here, I am going to put our definition of a measurement of routine into a single equation</p>
+<p><span class="math display">\[\mathrm{R} \sim \Sigma_{s=1}^{S} H(s) \\ H(s) = -\Sigma_{s'=1}^{S'} p(s'|s) \mathrm{log}(p(s'|s))\]</span></p>
+<p>where <span class="math inline">\(s\)</span> is the current state, and <span class="math inline">\(s'\)</span> is the next visited state.</p>
+<p>What this equation says is that the more ways you leave a state, the higher your energy from that state - i.e.&nbsp;the more ways you leave that state then the less routine you are. Your total routine score is determined by the joint probability of all the ways you leave all the states you have entered. Thus someone who leaves state 1 for states 2 and 3 will score more highly than someone who only leaves state 1 for state 2. Someone who does this on a 50/50 ratio would score as less routine than someone who did it only 1 times out of 10 (because of <span class="math inline">\(H\)</span> reflecting the average log probability). I think this is ok, because arguably, the person who was random once, was most of the time, doing fewer things the same way than another subject who was consistently doing the same number of things most of the time.</p>
+<p>Will this measure differentiate if someone had the sequence {1, 2, 3, 4, 3, 2, 1}, or if they spent the first half of the experiment going {1,2,3,4} and the second half going {4,3,2,1}? To me the first person is more routine and so should get a lower score, because they only leave 4 via one way in the first case, and 4 via 2 ways in the second case.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sub1 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span>), <span class="at">times =</span> <span class="dv">60</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>sub2 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>), <span class="at">times=</span><span class="dv">52</span>), <span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span>), <span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">1</span>), <span class="at">times=</span><span class="dv">52</span>))</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>sub1 <span class="ot">&lt;-</span> <span class="fu">data_2_counts_matrix</span>(sub1, <span class="dv">16</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>sub1 <span class="ot">&lt;-</span> <span class="fu">p_st1_gs</span>(sub1, <span class="dv">16</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>sub1 <span class="ot">&lt;-</span> <span class="fu">apply</span>(sub1, <span class="dv">1</span>, H)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>sub2 <span class="ot">&lt;-</span> <span class="fu">data_2_counts_matrix</span>(sub2, <span class="dv">16</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>sub2 <span class="ot">&lt;-</span> <span class="fu">p_st1_gs</span>(sub2, <span class="dv">16</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>sub2 <span class="ot">&lt;-</span> <span class="fu">apply</span>(sub2, <span class="dv">1</span>, H)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">tibble</span>(<span class="at">sub =</span> <span class="fu">c</span>(<span class="st">"1"</span>, <span class="st">"2"</span>), <span class="at">R =</span> <span class="fu">c</span>(<span class="fu">sum</span>(sub1), <span class="fu">sum</span>(sub2))))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">sub</th>
+<th style="text-align: right;">R</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: right;">2.079406</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: right;">2.772313</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Oh, this is actually quite nice. Because a door can’t be selected twice, the fact that the second subject changes how they leave state 4 halfway through marks them as slightly less routine than someone who did the same thing the whole time. This tells us that the measure is sensitive to people who mix up their routines over the course of the experiment, relative to people who fixed a longer routine from the start.</p>
 </section>
 <section id="the-impact-of-how-many-door-selections-you-made" class="level3">
 <h3 class="anchored" data-anchor-id="the-impact-of-how-many-door-selections-you-made">The impact of how many door selections you made</h3>
@@ -551,9 +597,9 @@ window.Quarto = {
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>doubles <span class="ot">&lt;-</span> <span class="fu">lapply</span>(peeps, generate_data_for_one_person, <span class="at">n =</span> <span class="dv">360</span><span class="sc">*</span><span class="dv">2</span>, <span class="at">n_doors =</span> <span class="dv">16</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>doubles <span class="ot">&lt;-</span> <span class="fu">apply</span>(<span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(doubles, <span class="cf">function</span>(x) <span class="fu">apply</span>(x, <span class="dv">1</span>, H))), <span class="dv">1</span>, sum)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(doubles, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"sub"</span>, <span class="st">"H"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>doubles <span class="ot">&lt;-</span> <span class="fu">lapply</span>(peeps, generate_data_for_one_person, <span class="at">n =</span> <span class="dv">360</span><span class="sc">*</span><span class="dv">2</span>, <span class="at">n_doors =</span> <span class="dv">16</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>doubles <span class="ot">&lt;-</span> <span class="fu">apply</span>(<span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(doubles, <span class="cf">function</span>(x) <span class="fu">apply</span>(x, <span class="dv">1</span>, H))), <span class="dv">1</span>, sum)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(doubles, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"sub"</span>, <span class="st">"H"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -608,91 +654,91 @@ window.Quarto = {
 </section>
 <section id="the-impact-of-noise" class="level3">
 <h3 class="anchored" data-anchor-id="the-impact-of-noise">The impact of noise</h3>
-<p>To assess the impact of noise, I am going to set everyone’s epsilon to 10%. This means that 10% of their responses will be randomly drawn from their total set of responses. I would expect people to maintain the ranking of entropy scores, but not the entropy scores themselves.</p>
+<p>To assess the impact of noise, I am going to set everyone’s epsilon to 10%. This means that 10% of their responses will be randomly drawn from the total set of responses. I would expect people to maintain the ranking of entropy scores, but not the entropy scores themselves.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>sequences_for_noise <span class="ot">&lt;-</span> <span class="fu">lapply</span>(peeps, generate_data, <span class="at">n =</span> <span class="dv">320</span>) <span class="co"># approximates the number of responses per session</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>add_noise_to_a_sequence <span class="ot">&lt;-</span> <span class="cf">function</span>(a_sequence, n_doors, <span class="at">epsilon =</span> .<span class="dv">1</span>){</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  idxs <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(a_sequence)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  n_sample <span class="ot">&lt;-</span> <span class="fu">round</span>(<span class="fu">length</span>(idxs) <span class="sc">*</span> epsilon)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  noise_idx <span class="ot">&lt;-</span> <span class="fu">sample</span>(idxs, <span class="at">size=</span>n_sample)</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  a_sequence[noise_idx] <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">unique</span>(a_sequence), <span class="at">size=</span>n_sample, <span class="at">replace=</span><span class="cn">TRUE</span>)</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  a_sequence</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>sub_sequences_w_noise <span class="ot">&lt;-</span> <span class="fu">lapply</span>(sequences_for_noise, add_noise_to_a_sequence, <span class="at">n_doors =</span> <span class="dv">16</span>)</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>count_mats <span class="ot">&lt;-</span> <span class="fu">lapply</span>(sub_sequences_w_noise, data_2_counts_matrix, <span class="at">n_doors =</span> <span class="dv">16</span>)</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>prob_mats_w_noise <span class="ot">&lt;-</span> <span class="fu">lapply</span>(count_mats, p_st1_gs, <span class="at">n_doors =</span> <span class="dv">16</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>sequences_for_noise <span class="ot">&lt;-</span> <span class="fu">lapply</span>(peeps, generate_data, <span class="at">n =</span> <span class="dv">320</span>) <span class="co"># approximates the number of responses per session</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>add_noise_to_a_sequence <span class="ot">&lt;-</span> <span class="cf">function</span>(a_sequence, n_doors, <span class="at">epsilon =</span> .<span class="dv">1</span>){</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  idxs <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(a_sequence)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  n_sample <span class="ot">&lt;-</span> <span class="fu">round</span>(<span class="fu">length</span>(idxs) <span class="sc">*</span> epsilon)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  noise_idx <span class="ot">&lt;-</span> <span class="fu">sample</span>(idxs, <span class="at">size=</span>n_sample)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  a_sequence[noise_idx] <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n_doors, <span class="at">size=</span>n_sample, <span class="at">replace=</span><span class="cn">TRUE</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  a_sequence</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>sub_sequences_w_noise <span class="ot">&lt;-</span> <span class="fu">lapply</span>(sequences_for_noise, add_noise_to_a_sequence, <span class="at">n_doors =</span> <span class="dv">16</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>count_mats <span class="ot">&lt;-</span> <span class="fu">lapply</span>(sub_sequences_w_noise, data_2_counts_matrix, <span class="at">n_doors =</span> <span class="dv">16</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>prob_mats_w_noise <span class="ot">&lt;-</span> <span class="fu">lapply</span>(count_mats, p_st1_gs, <span class="at">n_doors =</span> <span class="dv">16</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Lets quickly look at these matrices, to see what we’re quantifying.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>noise_ps <span class="ot">&lt;-</span> <span class="fu">lapply</span>(prob_mats_w_noise, heatmap, <span class="at">Colv =</span> <span class="cn">NA</span>, <span class="at">Rowv =</span> <span class="cn">NA</span>, <span class="at">scale=</span><span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>noise_ps <span class="ot">&lt;-</span> <span class="fu">lapply</span>(prob_mats_w_noise, heatmap, <span class="at">Colv =</span> <span class="cn">NA</span>, <span class="at">Rowv =</span> <span class="cn">NA</span>, <span class="at">scale=</span><span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-10-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-11-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-10-3.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-11-3.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-10-4.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-11-4.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-10-5.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-11-5.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-10-6.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-11-6.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-10-7.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-11-7.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-10-8.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-11-8.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-10-9.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="premises-ent-measure_files/figure-html/unnamed-chunk-11-9.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -701,8 +747,8 @@ window.Quarto = {
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>noisies <span class="ot">&lt;-</span> <span class="fu">apply</span>(<span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(prob_mats_w_noise, <span class="cf">function</span>(x) <span class="fu">apply</span>(x, <span class="dv">1</span>, H))), <span class="dv">1</span>, sum)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(noisies, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"sub"</span>, <span class="st">"H"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>noisies <span class="ot">&lt;-</span> <span class="fu">apply</span>(<span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(prob_mats_w_noise, <span class="cf">function</span>(x) <span class="fu">apply</span>(x, <span class="dv">1</span>, H))), <span class="dv">1</span>, sum)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(noisies, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"sub"</span>, <span class="st">"H"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -715,11 +761,11 @@ window.Quarto = {
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">P1</td>
-<td style="text-align: right;">1.604524</td>
+<td style="text-align: right;">6.289126</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">P2</td>
-<td style="text-align: right;">5.771130</td>
+<td style="text-align: right;">9.714051</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">P3</td>
@@ -727,33 +773,33 @@ window.Quarto = {
 </tr>
 <tr class="even">
 <td style="text-align: left;">P4</td>
-<td style="text-align: right;">2.933896</td>
+<td style="text-align: right;">8.660041</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">P5</td>
-<td style="text-align: right;">2.683167</td>
+<td style="text-align: right;">6.522968</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">P6</td>
-<td style="text-align: right;">3.122473</td>
+<td style="text-align: right;">7.222640</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">P7</td>
-<td style="text-align: right;">3.335617</td>
+<td style="text-align: right;">10.408767</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">P8</td>
-<td style="text-align: right;">6.377878</td>
+<td style="text-align: right;">10.947752</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">P9</td>
-<td style="text-align: right;">7.872890</td>
+<td style="text-align: right;">8.483083</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>Ok, so the news is not perfect but is kind of good - it does show that if people are lost and routinely hitting all the doors, we’re particularly vulnerable to disrupting the rank ordering under conditions of random noise. So, perhaps we should only apply the measure to people who have not lost the task (indeed the accuracy in our task is high, but we could have a cut-off on general errors?).</p>
+<p>How to interpret the impact of noise?</p>
 </section>
 <section id="summary" class="level3">
 <h3 class="anchored" data-anchor-id="summary">Summary</h3>

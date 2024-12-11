@@ -11,6 +11,7 @@ editor: visual
 rm(list=ls())
 set.seed(42)
 library(tidyverse)
+library(brms)
 ```
 
 The goal is to develop a metric that quantifies how routine people are on the door task, during the stay trials of the practice phase. Here, we define 'routine' as the consistent ordering of responses over trials. We want this measure to:
@@ -149,7 +150,37 @@ knitr::kable(p_dat, col.names = c("sub", "H"))
 
 Looking at the heatmaps and the entropy scores, I can see that they are ordering 'people' how we would want, given the definition of routine above.
 
-Okies, this is looking promising. Now I want to do a couple of sanity checks. First, lets check how these measures hold up over varying numbers of door selections. The calculations should be invariant to this, as long as you are repeating, but I just want to check.
+Okies, this is looking promising. Now I want to do a couple of sanity checks. First, lets define the equation and think about its implications. Then I'll check how these measures hold up over varying numbers of door selections. The calculations should be invariant to this, as long as you are repeating, but I just want to check.
+
+### Routine - a definition
+
+Now that we are here, I am going to put our definition of a measurement of routine into a single equation
+
+$$\mathrm{R} \sim \Sigma_{s=1}^{S} H(s) \\ H(s) = -\Sigma_{s'=1}^{S'} p(s'|s) \mathrm{log}(p(s'|s))$$
+
+where $s$ is the current state, and $s'$ is the next visited state.
+
+What this equation says is that the more ways you leave a state, the higher your energy from that state - i.e. the more ways you leave that state then the less routine you are. Your total routine score is determined by the joint probability of all the ways you leave all the states you have entered. Thus someone who leaves state 1 for states 2 and 3 will score more highly than someone who only leaves state 1 for state 2. Someone who does this on a 50/50 ratio would score as less routine than someone who did it only 1 times out of 10 (because of $H$ reflecting the average log probability). I think this is ok, because arguably, the person who was random once, was most of the time, doing fewer things the same way than another subject who was consistently doing the same number of things most of the time.
+
+Will this measure differentiate if someone had the sequence {1, 2, 3, 4, 3, 2, 1}, or if they spent the first half of the experiment going {1,2,3,4} and the second half going {4,3,2,1}? To me the first person is more routine and so should get a lower score, because they only leave 4 via one way in the first case, and 4 via 2 ways in the second case.
+
+```{r}
+
+sub1 <- rep(c(1, 2, 3, 4, 3, 2, 1), times = 60)
+sub2 <- c(rep(c(1:4), times=52), c(3, 2, 1), rep(c(4:1), times=52))
+
+sub1 <- data_2_counts_matrix(sub1, 16)
+sub1 <- p_st1_gs(sub1, 16)
+sub1 <- apply(sub1, 1, H)
+
+sub2 <- data_2_counts_matrix(sub2, 16)
+sub2 <- p_st1_gs(sub2, 16)
+sub2 <- apply(sub2, 1, H)
+
+knitr::kable(tibble(sub = c("1", "2"), R = c(sum(sub1), sum(sub2))))
+```
+
+Oh, this is actually quite nice. Because a door can't be selected twice, the fact that the second subject changes how they leave state 4 halfway through marks them as slightly less routine than someone who did the same thing the whole time. This tells us that the measure is sensitive to people who mix up their routines over the course of the experiment, relative to people who fixed a longer routine from the start.
 
 ### The impact of how many door selections you made
 
@@ -166,7 +197,7 @@ That sanity check worked. The next thing I want to know is how this all holds up
 
 ### The impact of noise
 
-To assess the impact of noise, I am going to set everyone's epsilon to 10%. This means that 10% of their responses will be randomly drawn from their total set of responses. I would expect people to maintain the ranking of entropy scores, but not the entropy scores themselves.
+To assess the impact of noise, I am going to set everyone's epsilon to 10%. This means that 10% of their responses will be randomly drawn from the total set of responses. I would expect people to maintain the ranking of entropy scores, but not the entropy scores themselves.
 
 ```{r}
 
@@ -176,7 +207,7 @@ add_noise_to_a_sequence <- function(a_sequence, n_doors, epsilon = .1){
   idxs <- 1:length(a_sequence)
   n_sample <- round(length(idxs) * epsilon)
   noise_idx <- sample(idxs, size=n_sample)
-  a_sequence[noise_idx] <- sample(unique(a_sequence), size=n_sample, replace=TRUE)
+  a_sequence[noise_idx] <- sample(1:n_doors, size=n_sample, replace=TRUE)
   a_sequence
 }
 
@@ -199,10 +230,96 @@ noisies <- apply(do.call(rbind, lapply(prob_mats_w_noise, function(x) apply(x, 1
 knitr::kable(noisies, col.names = c("sub", "H"))
 ```
 
-Ok, so the news is not perfect but is kind of good - it does show that if people are lost and routinely hitting all the doors, we're particularly vulnerable to disrupting the rank ordering under conditions of random noise. So, perhaps we should only apply the measure to people who have not lost the task (indeed the accuracy in our task is high, but we could have a cut-off on general errors?).
+How to interpret the impact of noise? The impact of the noise is dependent on the number of places you go back to - as in, if your routine involves visiting more states in a consistent way, if there is random noise in your measurement, then you are more likely to return to a higher number of different states. In the case of a routine with few state transitions in it, the noise will induce a transition back to a fewer number of states. This is an interesting question: if you randomly transition from a higher number of states (that you were visiting regularly), then you are indeed making a higher $N$ of irregular moves, than someone who only deviates from a few states. In sum, I think that a set with 10% of random moves from a longer routine is perhaps less routine overall than 10% of random moves from a short routine.
 
-### Summary
+The randomness noise added to P7 and P8 has wound up in them leaving states in a higher number of ways than P9. It looks like the starting conditions of P7 and P8 means that adding random door entries has the capacity to expand the number of states left to a higher extent than P9 and the other remaining participants. I think that what is happening with P7 is the fact that 2 states are left 2 ways, this multiplicatively increases the way you can get back to the sequence when you add randomness. This also occurs for P8, where you can leave 1 state 4 ways, and you can enter state 4 via 4 routes. However, why this doesn't occur for P9 is intriguing. I think its due to the spatial sparsity of the starting points - it increases the probability that the states won't be exited some ways, or minimises the ways back into the sequence (I think?). To be revisited...
 
-This seems like not a bad definition and measurement of routines to me. From this perspective, you are more routine if you enter states consistently. If you enter a state from multiple preceding states, or you vary in how you enter multiple states you are quantified as less routine.
+### Interim Summary
 
-I have an idea on how to permute null matrices for a statistical test against chance, but will only get onto that if nobody thinks that this part is a terrible idea.
+This seems like not a bad definition and measurement of routines to me. From this perspective, you are more routine if you enter states consistently. If you enter a state from multiple preceding states, or you vary in how you enter multiple states you are quantified as less routine. If you start behaving randomly, then your routine score is impacted by where you can be random from.
+
+## Statistical testing against chance
+
+My plan for statistical testing against chance is the following:
+
+For each participant, take their set of responses and shuffle them, compute $R$ over 1000 iterations. This will give a null distribution of their $R$ scores, given that they were performing their selections randomly. I am going to compute this for each person to see what I get:
+
+**Note for discussion - should I constrain the random sampling in any way? e.g. no returnsies to the same location?**
+
+```{r, message = false}
+
+observed_sequences <- lapply(peeps, generate_data, n=360)
+
+# as we don't count returnsies in the task, and they are highly unlikely, I am going to constrain the generation of the null distribution so that self to self transitions are not allowed. This feels fairer:
+sample_non_consec <- function(observed_data){
+  
+  n = length(observed_data) # this is the length of the sequence we will generate
+  out = rep(0, times=n)
+  out[1] <- sample(observed_data, 1)
+  values <- unique(observed_data)
+  for (i in 2:length(out)){
+    poss_values <- setdiff(values, out[i - 1])
+    out[i] <- sample(poss_values, 1)
+  }
+  out
+}
+
+generate_null_for_one_person <- function(observed_data, n_samples = 1000, n_doors = 16){
+  
+  null_seqs <- replicate(n_samples, sample_non_consec(observed_data), simplify=FALSE)
+  null_counts <- lapply(null_seqs, data_2_counts_matrix, n_doors = n_doors)
+  null_ps <- lapply(null_counts, p_st1_gs, n_doors = n_doors)
+  null_Rs <- apply(do.call(rbind, lapply(null_ps, function(x) apply(x, 1, H))), 1, sum)
+  null_Rs
+}
+
+null_Rs <- lapply(observed_sequences, generate_null_for_one_person, n_samples = 1000, n_doors = 16)
+
+lapply(1:length(null_Rs), function(x) hist(null_Rs[[x]], main = names(null_Rs)[x],
+                                           xlab = "null Rs"))
+
+```
+
+This suggests to me that the nulls calculated this way vary from slightly positively skewed to normal.
+
+What we can do next is subtract each subject's observed R from each observation in their null R. Obviously, the made up subs had very low R scores. Let's plot it to see what it looks like.
+
+```{r}
+
+null_obs_diffs <- function(x,y){
+  y - x
+}
+null_diffs <- mapply(null_obs_diffs, p_dat, null_Rs, SIMPLIFY = FALSE)
+
+lapply(1:length(null_diffs), function(x) hist(null_diffs[[x]], main = names(null_diffs)[x],
+                                             xlab = "null Diffs"))
+```
+
+Okies, so I think what we can say here, is that in the case of routines, we expect the distribution of differences to be normal, with a particular variance, with an offset on the mean value for each participant. We can therefore use a mixed effects model, to ask whether the group level disribution of differences is likely to cover zero?
+
+First, lets quickly generate some actual random data and check we get null distributions around zero.
+
+```{r, message = FALSE}
+
+random_folks <- lapply(observed_sequences, sample_non_consec)
+
+rf_mats <- lapply(random_folks, data_2_counts_matrix, n_doors = 16)
+rf_probs <- lapply(rf_mats, p_st1_gs, n_doors = 16)
+rf_Rs <- apply(do.call(rbind, lapply(rf_probs, function(x) apply(x, 1, H))), 1, sum)
+
+rf_diffs <- mapply(null_obs_diffs, rf_Rs, null_Rs, SIMPLIFY = FALSE)
+lapply(1:length(rf_diffs), function(x) hist(rf_diffs[[x]], main = names(rf_diffs)[x],
+                                             xlab = "random folks Diffs"))
+```
+
+Okies, happy enough for now. Now I'll construct the dataframe for the mixed effects model. Going to use BRMS for a quick initial modelling -
+
+```{r}
+
+dat <- do.call(rbind, lapply(1:length(null_diffs), function(x) data_frame(sub = names(null_diffs[x]),
+                                                         diffs = null_diffs[[x]])))
+
+fit <- brm(diffs ~ 1|sub,
+           data = dat,
+           family = gaussian)
+```
