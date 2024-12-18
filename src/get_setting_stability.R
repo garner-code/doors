@@ -5,6 +5,19 @@
 
 get_setting_stability <- function(data){
   
+  data <- data %>% 
+    group_by(sub,ses,t) %>% 
+    mutate(
+      scca = case_when(diff(c(1,door_cc))>0~1,.default=0), 
+      sccb = case_when(diff(c(0,door_cc))>0~1,.default=0), 
+      s_cc = case_when(ses==2 & switch==1 ~ sccb, .default=scca),
+      soca = case_when(diff(c(0,door_oc))>0~1,.default=0), 
+      socb = case_when(diff(c(1,door_oc))>0~1,.default=0), 
+      s_oc = case_when(ses==2 & switch==1 ~ socb, .default=soca),
+      s_oc_late = case_when(diff(c(0,t))~0,.default=soc)
+    ) %>% 
+    select(!c(on,off,train_type:original_house))
+  
   select_context <- data.frame(s_cc=integer(),s_oc=integer(),s_oc_late=integer(),s_total=integer(),s_cumulative=integer())
   for(su in unique(data$sub)){
     for(se in unique(data$ses)){
@@ -38,7 +51,7 @@ get_setting_stability <- function(data){
         
         tmp <- data.frame(s_cc,s_oc,s_oc_late) %>% mutate(s_total = case_when(s_cc==1~1,s_oc==1~1,.default=0)) %>% mutate(s_cumulative = cumsum(s_total))
         select_context <- rbind(select_context,tmp)
-        
+
       } 
     }
   }
