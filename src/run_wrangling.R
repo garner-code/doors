@@ -91,10 +91,7 @@ if(exp=="exp_lt"){
   grp_data <- grp_data %>% mutate(door_lc = c(kronecker(matrix(1, nrow(grp_data), 1), NA)), .after="door_oc")
 }
 
-# track when they changed context into the correct or other context's door set
-select_context <- get_setting_stability(grp_data)
-grp_data <- grp_data %>% add_column(select_cc = select_context$s_cc,select_oc = select_context$s_oc, select_oc_late = select_context$s_oc_late, select_total = select_context$s_total, select_cumulative = select_context$s_cumulative,.after="door_lc")
-
+grp_data <- get_setting_stability(grp_data) # track when they changed context into the correct or other context's door set
 grp_data <- grp_data %>% mutate(door_nc = case_when(door_cc==1 ~ 0, door_oc == 1 ~ 0, .default=1), .after="door_oc")
 
 # save the formatted data
