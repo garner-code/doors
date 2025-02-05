@@ -6,7 +6,7 @@ library(wesanderson)
 source(file.path(getwd(),"src","get_wrangled_data.R"))
 source(file.path(getwd(),"src","theme_doors.R"))
 
-exp <- "exp_ts"
+exp <- "exp_lt"
 project_path <- getwd()
 width <- 16 #set this to the manuscript text width (usually 21 cm - 2*2.5 cm margins = 16 cm)
 
@@ -41,11 +41,11 @@ if(exp=="exp_lt"){
 }
 log_data <- data %>% 
   mutate(
-    accuracy = log(accuracy),
-    rt = log(rt),
-    setting_errors = log(setting_errors),
-    perseveration = log(perseveration),
-    exploration = log(exploration)
+    accuracy = log(accuracy+.0001),
+    rt = log(rt+.0001),
+    setting_errors = log(setting_errors+.0001),
+    perseveration = log(perseveration+.0001),
+    exploration = log(exploration+.0001)
   )
 if(exp=="exp_lt"){log_data <- log_data %>% mutate(k4 = log(k4))}
 
@@ -207,7 +207,6 @@ ggsave(fnl, plot = last_plot(), unit = "cm", width = width*.5, height = width*.5
 # how do perseveration and exploration relate to test performance?
 ### accuracy
 log_data %>% 
-  filter(is.finite(perseveration), is.finite(accuracy)) %>% 
   ggplot(aes(x = perseveration, y = accuracy, colour = condition, fill = condition)) +
   geom_point(colour="black", size = 2.5, alpha = .7, shape=21, stroke = 1) +
   geom_smooth(method="lm", se=TRUE) +
@@ -221,7 +220,6 @@ fnl <- file.path(project_path, "fig", paste(exp,"perseveration-accuracy.pdf",sep
 ggsave(fnl, plot = last_plot(), unit = "cm", width = width*.5, height = width*.5, limitsize = FALSE)
 
 log_data %>% 
-  filter(is.finite(exploration), is.finite(accuracy)) %>% 
   ggplot(aes(x = exploration, y = accuracy, colour = condition, fill = condition)) +
   geom_point(colour="black", size = 2.5, alpha = .7, shape=21, stroke = 1) +
   geom_smooth(method="lm", se=TRUE) +
@@ -236,7 +234,6 @@ ggsave(fnl, plot = last_plot(), unit = "cm", width = width*.5, height = width*.5
 
 ### setting errors
 log_data %>% 
-  filter(is.finite(perseveration), is.finite(setting_errors)) %>% 
   ggplot(aes(x = perseveration, y = setting_errors, colour = condition, fill = condition)) +
   geom_point(colour="black", size = 2.5, alpha = .7, shape=21, stroke = 1) +
   geom_smooth(method="lm", se=TRUE) +
@@ -250,7 +247,6 @@ fnl <- file.path(project_path, "fig", paste(exp,"perseveration-setting-errors.pd
 ggsave(fnl, plot = last_plot(), unit = "cm", width = width*.5, height = width*.5, limitsize = FALSE)
 
 log_data %>% 
-  filter(is.finite(exploration), is.finite(setting_errors)) %>% 
   ggplot(aes(x = exploration, y = setting_errors, colour = condition, fill = condition)) +
   geom_point(colour="black", size = 2.5, alpha = .7, shape=21, stroke = 1) +
   geom_smooth(method="lm", se=TRUE) +
@@ -265,7 +261,6 @@ ggsave(fnl, plot = last_plot(), unit = "cm", width = width*.5, height = width*.5
 
 ### rt
 log_data %>% 
-  filter(is.finite(perseveration), is.finite(rt)) %>% 
   ggplot(aes(x = perseveration, y = rt, colour = condition, fill = condition)) +
   geom_point(colour="black", size = 2.5, alpha = .7, shape=21, stroke = 1) +
   geom_smooth(method="lm", se=TRUE) +
@@ -278,7 +273,6 @@ fnl <- file.path(project_path, "fig", paste(exp,"perseveration-rt.pdf",sep="_"))
 ggsave(fnl, plot = last_plot(), unit = "cm", width = width*.68, height = width*.5, limitsize = FALSE)
 
 log_data %>% 
-  filter(is.finite(exploration), is.finite(rt)) %>% 
   ggplot(aes(x = exploration, y = rt, colour = condition, fill = condition)) +
   geom_point(colour="black", size = 2.5, alpha = .7, shape=21, stroke = 1) +
   geom_smooth(method="lm", se=TRUE) +
@@ -293,7 +287,6 @@ ggsave(fnl, plot = last_plot(), unit = "cm", width = width*.68, height = width*.
 ### k4
 if(exp=="exp_lt"){
   log_data %>% 
-    filter(is.finite(perseveration), is.finite(k4)) %>% 
     ggplot(aes(x = perseveration, y = k4, colour = condition, fill = condition)) +
     geom_point(colour="black", size = 2.5, alpha = .7, shape=21, stroke = 1) +
     geom_smooth(method="lm", se=TRUE) +
@@ -306,7 +299,6 @@ if(exp=="exp_lt"){
   ggsave(fnl, plot = last_plot(), unit = "cm", width = width*.68, height = width*.5, limitsize = FALSE)
   
   log_data %>% 
-    filter(is.finite(exploration), is.finite(k4)) %>% 
     ggplot(aes(x = exploration, y = k4, colour = condition, fill = condition)) +
     geom_point(colour="black", size = 2.5, alpha = .7, shape=21, stroke = 1) +
     geom_smooth(method="lm", se=TRUE) +
