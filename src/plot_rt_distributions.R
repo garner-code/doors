@@ -9,7 +9,7 @@ library(ggpubr)
 project_path <- getwd()
 
 # settings
-exp <- "exp_ts" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
+exp <- "multitasking" #"flexibility"
 ses <- "ses-test" # session: 'ses-learn','ses-train','ses-test'
 label_sz <- 10
 
@@ -18,7 +18,7 @@ fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv"
 res <- read.csv(fnl)
 
 # trim high RTs for each condition
-#res <- res %>% group_by(sub,ses,switch) %>% filter(rt<(mean(rt)+3*sd(rt)))
+res <- res %>% group_by(sub,ses,switch) %>% filter(rt<(mean(rt)+3*sd(rt)))
 
 pl <- list()
 for (subject in unique(res$sub)){
@@ -26,12 +26,13 @@ for (subject in unique(res$sub)){
   pl[[subject]] <- tmp %>% 
     ggplot() +
     geom_density(aes(x=rt, colour = factor(ses), linetype = factor(switch)), linewidth = 1) + 
-    guides(linetype=FALSE) +
+    guides(linetype='legend') + # 'none'
     theme_minimal() +
     scale_color_brewer(
       name = "Phase",
       labels = c("Learn","Train","Test")
     ) + 
+    scale_linetype(name='Switch') + 
     labs(title = paste("Subject",subject,sep=" "), x = "RT", y = "Density") +
     theme(
       plot.title = element_text(size = label_sz),
