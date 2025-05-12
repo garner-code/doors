@@ -10,7 +10,7 @@ library(ggpubr)
 project_path <- getwd()
 
 # settings
-exp <- "exp_ts" # experiment: 'exp_ts' (task-switching) or 'exp_lt' (learning transfer)
+exp <- "multitasking" #"flexibility"
 label_sz <- 20
 mk_sz <- 2
 
@@ -19,9 +19,9 @@ fnl <- file.path(project_path, "res", paste(paste(exp, "avg", sep = "_"), ".csv"
 res <- read.csv(fnl)
 res <- res %>%
   mutate(switch = case_when(switch == 0 ~ "Stay", switch == 1 ~ "Switch")) %>%
-  mutate(train_type = as.character(train_type)) %>% 
-  mutate(transfer_sequence = case_when(full_transfer_first == 0 ~ "Partial-Full", full_transfer_first == 1 ~ "Full-Partial", .default = NA)) %>% 
-  mutate(transfer = case_when(transfer == 1 ~ "Full", transfer == 2 ~ "Partial", .default = NA))
+  mutate(train_type = as.character(train_type)) # %>%
+  # mutate(transfer_sequence = case_when(full_transfer_first == 0 ~ "Partial-Full", full_transfer_first == 1 ~ "Full-Partial", .default = NA)) %>% 
+  # mutate(transfer = case_when(transfer == 1 ~ "Full", transfer == 2 ~ "Partial", .default = NA))
 
 # for train and test phases, group by training type (low / high switch) and trial type (switch / stay)
 pl=list()
