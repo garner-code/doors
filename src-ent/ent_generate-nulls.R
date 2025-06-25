@@ -1,3 +1,5 @@
+apply_generate_nulls <- function(){
+
 ## K. Garner, 2025. Generate null distributions per participant
 ## take differences between observed and nulls and save outcome
 ###################################################################
@@ -39,3 +41,4 @@ head(null_dists)
 write.csv(null_dists, file=paste("../doors-data/data-wrangled/exp", exp_str, 
                                  "rnulls.csv", sep="_"),
           row.names=FALSE)
+}

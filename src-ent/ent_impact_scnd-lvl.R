@@ -2,76 +2,51 @@
 #########################################################
 # apply second level analysis to the beta values estimated
 # at the first level
+remove_outliers <- function(betas, dv){
+  # this function takes the betas dataframe, and replaces
+  # any outliers with NA values
+  p <- boxplot(betas[, dv])
+  nu_dv = paste(dv, "flt", sep='_')
+  betas_flt <- betas %>% select(sub, dv) %>%
+                 mutate( !!nu_dv := if_else(.data[[dv]] > min(p$stats) &
+                                         .data[[dv]] < max(p$stats),
+                                         .data[[dv]], NA))
+  betas_flt %>% select(nu_dv)
+}
 
-#################################################
-# clear environment and get what you need
-rm(list=ls())
-library(tidyverse)
-library(GGally)
-source(paste('src-ent/ent_functions.R', sep='/'))
 
-#################################################
-# load data
-exp_str <- 'ts'
-betas <- read.csv(paste('src-ent/betas', exp_str, 'first-level.csv', 
-                      sep='_'))
+apply_outlier_filter_to_all_vars <- function(betas){
+  betas <- read.csv(paste(data_path, 'betas_', exp_str, '_first-level.csv', 
+                          sep=''))
+  vars <- names(betas)[names(betas) != 'sub' & names(betas) != 'train_type']
+  betas <- cbind(betas, 
+                 do.call(cbind, lapply(vars, remove_outliers, betas=betas)))
+  # note that I manually plotted histograms of the distributions at this 
+  # point and they all looked reasonably normal
+  betas
+}
 
-#################################################
-# plot the beta co_efficients by group
-betas$train_type <- as.factor(betas$train_type)
-levels(betas$train_type) <- c("stable", "variable")
-
-betas %>% ggplot(aes(x=mu, group=train_type, fill=train_type)) +
-  geom_density(alpha = 0.5)
-betas %>% ggplot(aes(x=sw, group=train_type, fill=train_type)) +
-  geom_density(alpha = 0.5)
-betas %>% ggplot(aes(x=scs, group=train_type, fill=train_type)) +
-  geom_density(alpha = 0.5)
-betas %>% ggplot(aes(x=cntx, group=train_type, fill=train_type)) +
-  geom_density(alpha = 0.5)
-
-# # do specific cleaning ### now not necessary as more stable estimates
-# if (exp_str == 'ts'){
-#  source(paste('src-ent/ent_', exp_str, '-beta-clean.R', sep=""))
-# }
-
-sd_adj = 3
-betas <- cbind(betas, betas %>% summarise(mu_mn = mean(mu) - (sd_adj*sd(mu)),
-                                          mu_mx = mean(mu) + (sd_adj*sd(mu)),
-                                          sw_mn = mean(sw) - (sd_adj*sd(sw)),
-                                          sw_mx = mean(sw) + (sd_adj*sd(sw)),
-                                          scs_mn = mean(scs) - (sd_adj*sd(scs)),
-                                          scs_mx = mean(scs) + (sd_adj*sd(scs)),
-                                          cntx_mn = mean(cntx) - (sd_adj*sd(cntx)),
-                                          cntx_mx = mean(cntx) + (sd_adj*sd(cntx))))
-
-flt <- betas %>% mutate( mu_flt = if_else(mu < mu_mx & mu > mu_mn, mu, NA),
-                         sw_flt = if_else(sw < sw_mx & sw > sw_mn, sw, NA),
-                         scs_flt = if_else(scs < scs_mx & scs > scs_mn, scs, NA),
-                         cntx_flt = if_else(cntx < cntx_mx & cntx > cntx_mn, cntx, NA))
-
-flt$train_type <- as.factor(flt$train_type)
-levels(flt$train_type) <- c("stable", "variable")
-flt %>% ggplot(aes(x=mu_flt, group=train_type, fill=train_type)) +
-  geom_density(alpha = 0.5)
-flt %>% ggplot(aes(x=sw_flt, group=train_type, fill=train_type)) +
-  geom_density(alpha = 0.5)
-flt %>% ggplot(aes(x=scs_flt, group=train_type, fill=train_type)) +
-  geom_density(alpha = 0.5)
-flt %>% ggplot(aes(x=cntx_flt, group=train_type, fill=train_type)) +
-  geom_density(alpha = 0.5)
-
-#################################################
-# compare the beta co-efficients against zero
-with(flt, t.test(mu_flt, mu=0)) 
-with(flt, t.test(sw_flt, mu=0))
-with(flt, t.test(scs_flt, mu=0))
-with(flt, t.test(cntx_flt, mu=0))
-
-# compare the groups
-with(flt, t.test(mu_flt ~ train_type))
-with(flt, t.test(scs_flt ~ train_type))
-with(flt, t.test(cntx_flt ~ train_type))
+apply_t_tests_to_all_vars <- function(betas){
+  
+  # first, get the variables of interest
+  vars_2_test <- names(betas)[grepl('_flt', names(betas))]
+  
+  # now apply the t test across variables
+  
+  #################################################
+  # compare the beta co-efficients against zero
+  with(betas, t.test(mu_flt, mu=0)) 
+  with(betas, t.test(sw_flt, mu=0))
+  with(betas, t.test(scs_flt, mu=0))
+  with(betas, t.test(cntx_flt, mu=0))
+  
+  # compare the groups
+  with(betas, t.test(mu_flt ~ train_type))
+  with(betas, t.test(sw_flt ~ train_type))
+  with(betas, t.test(scs_flt ~ train_type))
+  with(betas, t.test(cntx_flt ~ train_type))
+  
+}
 
 #################################################
 # now, correlate the regressors with each other

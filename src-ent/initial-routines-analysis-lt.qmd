@@ -194,7 +194,7 @@ with(all_dat, points(x=log_r, y=log_acc, pch=1, cex=2))
 # draw regression line
 mod <- lm(log_acc ~ log_r, data=all_dat)
 abline(mod, col = "black", lwd = 1)
-text(x=1, y=-0.15, labels="r(81)=-0.28***", cex = 1.5)
+text(x=1, y=-0.15, labels="r(81)=-0.23***", cex = 1.5)
 dev.off()
 
 ```
