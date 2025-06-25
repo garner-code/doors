@@ -11,7 +11,7 @@ library(ggsci)
 library(ggpubr)
 
 # settings
-exp <- "exp_ts" # experiment: 'exp_ts' (task-conding) or 'exp_lt' (learning transfer)
+exp <- "multitasking" #"flexibility"
 label_sz <- 20
 mk_sz <- 2
 
