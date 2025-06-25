@@ -176,7 +176,7 @@ get_data <- function(data_path, exp, sub, ses, train_type, train_doors) {
     resps <- resps %>%
       filter(door > 0) # we only care about samples in which people hovered or clicked on a door
     
-    ### find the important events
+    ### find the important events # KG U2H
     resps <- resps %>%
       mutate(on = c(onset[[1]], 
                     case_when(diff(open_d) != 0 ~ onset[2:length(onset)], 

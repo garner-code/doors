@@ -5,7 +5,8 @@ res
 stats
 .Rproj.user
 .lintr
-.Rhistory
+*.Rhistory
 *.Rds
 *.rds
 *.csv
+
