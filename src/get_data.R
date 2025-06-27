@@ -168,8 +168,8 @@ get_data <- function(data_path, exp, sub, ses, train_type, train_doors) {
         rename(ses = test)
     }
     
-    # find onset time of each trial
-    ons <- resps %>% 
+    # find onset time of each trial  # KG. Note: I think I want to use the onset of the experiment from which to time events,
+    ons <- resps %>% # as there is the period of time where the target is on where people are 
       group_by(sub, ses, t, context) %>% 
       summarise(on = min(onset))
     

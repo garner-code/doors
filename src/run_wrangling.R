@@ -17,8 +17,8 @@ source(file.path("src","get_learned_doors.R"))
 
 # !you will want to update these settings a lot during piloting, when the task code or the way you
 # test changes, or when you test participants on different subsets of the task phases
-version <- "pilot-data" 
-exp <- "multitasking" #"flexibility"
+version <- "data_analysis_touchy" 
+exp <- "flexibility"
 sess <- c("ses-learn","ses-train","ses-test")
 
 # if (exp == "multitasking") {
@@ -39,7 +39,7 @@ if (!dir.exists(file.path(project_path, "res"))) {
 
 # !you will need to change the data path to match the location of OneDrive on your personal
 # computer
-file_path <- "C:/Users/cstone/OneDrive - UNSW/Documents/Projects/honours_projects/data"
+file_path <- "~/Downloads"
 exp_path <- str_glue("/{exp}/{version}")
 data_path <- file.path(file_path + exp_path)
 
