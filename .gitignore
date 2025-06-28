@@ -1,11 +1,13 @@
 .DS_Store
 doc
 fig
+figs
 res
 stats
 .Rproj.user
 .lintr
-.Rhistory
+*.Rhistory
 *.Rds
 *.rds
 *.csv
+
