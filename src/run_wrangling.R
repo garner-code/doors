@@ -101,7 +101,7 @@ for (sub in subs) {
 #   grp_data <- grp_data %>% mutate(door_lc = c(kronecker(matrix(1, nrow(grp_data), 1), NA)), .after="door_oc")
 # }
 grp_data <- grp_data %>% mutate(door_lc = c(kronecker(matrix(1, nrow(grp_data), 1), NA)), .after="door_oc")
-grp_data <- get_setting_stability(grp_data) # track when they changed context into the correct or other context's door set
+grp_data <- get_setting_stability(grp_data) # track when they changed context into the correct or other context's door set - KG: this line may not be necessary
 grp_data <- grp_data %>% mutate(door_nc = case_when(door_cc==1 ~ 0, door_oc == 1 ~ 0, .default=1), .after="door_oc")
 
 # save the formatted data
@@ -135,7 +135,7 @@ res$context_changes[intersect(which(res$switch==1),which(res$ses==2))] <- res$co
 rt <- grp_data %>%
   group_by(sub, ses, subses, t, context, train_type) %>%
   filter(door_cc == 1) %>%
-  summarise(rt = min(off)) # time to first correct click offset
+  summarise(rt = min(off)) # time to first correct click offset - KG: do we want onset instead? Also, we now need to get the original ontime recorded for each session, and subtract the value from here
 rt <- inner_join(grp_ons, rt, by=c('sub', 'ses', 't', 'context'))
 res$rt <- rt$rt - rt$on
 res$win <- 4-res$n_clicks >= 0
@@ -153,7 +153,7 @@ res <- res %>%
 
 # trim RTs
 if (exp=="flexibility"){
-  res <- res %>% filter(rt<=10) %>% ungroup() %>% group_by(ses,context,switch) %>% filter(rt<=(mean(rt)+(3*sd(rt))))
+  res <- res %>% filter(rt<=10) %>% ungroup() %>% group_by(ses,context,switch) %>% filter(rt<=(mean(rt)+(3*sd(rt)))) # so RT trimming happened at the group level. Need to change this and apply to both experiments
 }
 
 fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
