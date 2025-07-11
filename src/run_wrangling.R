@@ -32,7 +32,7 @@ if (!dir.exists(file.path(project_path, "res"))) {
 
 # !you will need to change the data path to match the location of OneDrive on your personal
 # computer
-data_path <- file.path("/Users/lydiabarnes/OneDrive - UNSW/task switch and transfer/data-sandpit", version)
+data_path <- file.path("/Users/lydiabarnes/Documents/academe/data/doors/data-sandpit", version)
 if (!dir.exists(data_path)) {
   stop(paste0(data_path, " does not exist"))
 }
@@ -142,7 +142,21 @@ res <- res %>%
 
 # trim RTs
 if (exp=="exp_ts"){
-  res <- res %>% filter(rt<=10) %>% ungroup() %>% group_by(ses,context,switch) %>% filter(rt<=(mean(rt)+(3*sd(rt))))
+  tmp <- res %>% 
+    ungroup() %>% 
+    group_by(sub,ses,context,switch) %>% 
+    summarise(
+      mu = mean(rt, na.omit=TRUE),
+      sd = sd(rt)
+    ) %>% 
+    mutate(cutoff = mu+2.5*sd) %>% 
+    select(!c(mu,sd))
+
+  res <- left_join(res,tmp)
+  
+  res <- res %>% 
+    filter(rt<=10) %>% 
+    filter(rt<=cutoff)
 }
 
 fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))

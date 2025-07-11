@@ -41,13 +41,20 @@ if(exp=="exp_lt"){
 }
 log_data <- data %>% 
   mutate(
-    accuracy = log(accuracy+.0001),
-    rt = log(rt+.0001),
+    accuracy = log(accuracy),
+    rt = log(rt),
     setting_errors = log(setting_errors+.0001),
-    perseveration = log(perseveration+.0001),
     exploration = log(exploration+.0001)
   )
-if(exp=="exp_lt"){log_data <- log_data %>% mutate(k4 = log(k4))}
+if(exp=="exp_lt"){
+  log_data <- log_data %>% 
+    mutate(
+      k4 = log(k4),
+      perseveration = log(perseveration+.0001))
+}else{
+    log_data <- log_data %>% 
+      mutate(perseveration = log(perseveration))
+  }
 
 # -------------------------------------------------------------------------
 # how does training group predict test performance?
