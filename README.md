@@ -206,3 +206,9 @@ Adjust the 'summary' steps in run_wrangling.R. These commands (e.g. `res <- grp_
 You can also filter the data before you do your summaries. For example, if you want to discard switch trials all together, you can add `res -> res %>% filter(switch==0)` after getting the results by trial, but before getting the results by subject. Filtering keeps only the rows that you've specified. In this example, it would keep rows on which there was no switch, which are marked as 0 in the data frame. 
 
 You can try any and all of these things just to see what happens. You can save the results to a file (click on the respective `write_csv(res,fnl)` and press CMD+Enter) and view them in Excel, or just run the thing you want to try (select only that text and press CMD+Enter) and view the res variable by clicking on it in the Environment (top right of your RStudio page). You can always go back to the code on GitHub if you don't like your modifications!
+
+
+
+## DOI
+
+10.5281/zenodo.16760166
