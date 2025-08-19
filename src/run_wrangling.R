@@ -144,19 +144,19 @@ res <- res %>%
 if (exp=="exp_ts"){
   tmp <- res %>% 
     ungroup() %>% 
-    group_by(sub,ses,context,switch) %>% 
+    group_by(sub,ses,switch) %>% 
+    filter(rt_correct < 4) %>% # v unrealistic upper cutoff
     summarise(
-      mu = mean(rt, na.omit=TRUE),
-      sd = sd(rt)
+      mu = mean(rt_correct, na.omit=TRUE),
+      sd = sd(rt_correct)
     ) %>% 
     mutate(cutoff = mu+2.5*sd) %>% 
     select(!c(mu,sd))
-
+  
   res <- left_join(res,tmp)
   
   res <- res %>% 
-    filter(rt<=10) %>% 
-    filter(rt<=cutoff)
+    filter(rt_correct<=cutoff)
 }
 
 fnl <- file.path(project_path, "res", paste(paste(exp, "trl", sep = "_"), ".csv", sep = ""))
